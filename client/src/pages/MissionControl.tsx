@@ -1,5 +1,6 @@
 import AtlasGraph from "@/components/AtlasGraph";
 import EarthMap from "@/components/EarthMap";
+import { WorkspaceExperienceControls } from "@/components/WorkspaceExperienceControls";
 import ProductionOperations from "@/components/ProductionOperations";
 import AnalystAssistant from "@/components/AnalystAssistant";
 import FindingWorkflow from "@/components/FindingWorkflow";
@@ -67,6 +68,7 @@ export default function MissionControl() {
   const [timelineIndex, setTimelineIndex] = useState(3);
   const [assistantOpen, setAssistantOpen] = useState(true);
   const [assistantConfirmed, setAssistantConfirmed] = useState(false);
+  const [density, setDensity] = useState<"comfortable" | "compact">("comfortable");
   const [importSelected, setImportSelected] = useState("Nuclei JSONL");
   const [demoSavedViews, setDemoSavedViews] = useState(() => typeof window === "undefined" ? ["Critical external surface"] : JSON.parse(window.localStorage.getItem("aegis-demo-saved-views") ?? '["Critical external surface"]') as string[]);
   const [auditLog, setAuditLog] = useState(auditEvents);
@@ -117,6 +119,7 @@ export default function MissionControl() {
           <button className="atlas-icon-button relative"><Activity size={16} /><i className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#ee7664]" /></button>
         </div>
       </header>
+      <WorkspaceExperienceControls active={active} onNavigate={navigateSection} onDensityChange={setDensity} />
 
       <nav className="relative z-20 flex gap-1 overflow-x-auto border-b border-white/10 bg-black/50 px-3 py-2 backdrop-blur-xl lg:hidden" aria-label="Mobile workspace navigation">
         {navItems.map((item) => { const Icon = item.icon; return <button key={item.id} onClick={() => navigateSection(item.id)} className={`flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] ${active === item.id ? "border-[#e8b760]/40 bg-[#e8b760]/10 text-[#f2cb82]" : "border-white/8 text-white/55"}`}><Icon size={12}/>{item.label}</button>; })}
@@ -132,7 +135,7 @@ export default function MissionControl() {
             <p className="mt-2 text-[11px] leading-4 text-white/52">Synthetic inputs only. Active testing, credential actions, and real targets are prohibited in this workspace.</p>
           </div>
         </aside>
-        <main className="min-w-0 flex-1 px-3 py-4 sm:px-4 sm:py-5 lg:px-6">
+        <main className={`min-w-0 flex-1 px-3 ${density === "compact" ? "py-2 sm:py-3" : "py-4 sm:py-5"} sm:px-4 lg:px-6`}>
           {active === "mission" ? <MissionView selected={selected} selectedFinding={selectedFinding} onSelect={setSelected} activeLayers={activeLayers} toggleLayer={toggleLayer} timelineIndex={timelineIndex} setTimelineIndex={setTimelineIndex} savedViewCount={savedViewQuery.data?.length ?? demoSavedViews.length} onSaveView={saveCurrentView} auditLog={auditLog} workspaceAssets={workspaceAssets} recordSource={persistentRecordQuery.data?.assets.length ? "durable workspace metadata" : "synthetic demo fallback"} safetyLoading={safetyLoading} safetyError={safetyError} privateLoading={persistentRecordQuery.isLoading && Boolean(user)} privateError={persistentRecordQuery.isError && Boolean(user)} savedViewsLoading={savedViewQuery.isLoading && Boolean(user)} savedViewsError={savedViewQuery.isError && Boolean(user)} savedViewsEmpty={Boolean(user) && !savedViewQuery.isLoading && !savedViewQuery.isError && savedViewQuery.data?.length === 0} /> : null}
           {active === "atlas" ? <GeoOperationsView selected={selected} onSelect={setSelected} activeLayers={activeLayers} workspaceAssets={workspaceAssets} /> : null}
           {active === "surface" ? persistentRecordQuery.isError && Boolean(user) ? <ViewState title="Asset inventory unavailable" detail="The private workspace record feed could not be loaded. No private inventory is displayed." error /> : Boolean(user) && !persistentRecordQuery.isLoading && persistentRecordQuery.data?.assets.length === 0 ? <ViewState title="No private assets yet" detail="This authenticated workspace has no persisted asset records. Import an authorized artifact or return to the synthetic demonstration view." /> : <SurfaceView selected={selected} onSelect={setSelected} /> : null}
