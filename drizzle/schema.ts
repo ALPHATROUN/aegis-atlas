@@ -159,6 +159,97 @@ export const reportDeliveries = mysqlTable("reportDeliveries", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const engagementGovernance = mysqlTable("engagementGovernance", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull().unique(),
+  scopeApprovalStatus: mysqlEnum("scopeApprovalStatus", ["draft", "pending-review", "approved", "expired", "blocked"]).notNull().default("draft"),
+  approvedByUserId: int("approvedByUserId"),
+  approvedAt: timestamp("approvedAt"),
+  importGateStatus: mysqlEnum("importGateStatus", ["review-required", "approved", "blocked"]).notNull().default("review-required"),
+  dataOriginLabel: varchar("dataOriginLabel", { length: 255 }).notNull().default("synthetic-authorized-demo"),
+  retentionProfile: mysqlEnum("retentionProfile", ["demo-session", "engagement", "legal-hold", "restricted"]).notNull().default("engagement"),
+  redactionProfile: mysqlEnum("redactionProfile", ["synthetic-demo", "internal", "client", "restricted"]).notNull().default("synthetic-demo"),
+  watermarkText: varchar("watermarkText", { length: 255 }).notNull().default("SYNTHETIC · AUTHORIZED DEMONSTRATION"),
+  updatedByUserId: int("updatedByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const importDecisions = mysqlTable("importDecisions", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  artifactName: varchar("artifactName", { length: 512 }).notNull(),
+  artifactHash: varchar("artifactHash", { length: 64 }).notNull(),
+  disposition: mysqlEnum("disposition", ["approved", "quarantined", "rejected"]).notNull(),
+  rationale: text("rationale").notNull(),
+  decidedByUserId: int("decidedByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const assessmentComments = mysqlTable("assessmentComments", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  taskId: int("taskId"),
+  findingId: int("findingId"),
+  reportDeliveryId: int("reportDeliveryId"),
+  body: text("body").notNull(),
+  authorUserId: int("authorUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const taskReviewEvents = mysqlTable("taskReviewEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  taskId: int("taskId").notNull(),
+  reviewState: mysqlEnum("reviewState", ["requested", "approved", "changes-requested", "retest-signed-off"]).notNull(),
+  summary: text("summary").notNull(),
+  reviewerUserId: int("reviewerUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const reportShareLinks = mysqlTable("reportShareLinks", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  reportDeliveryId: int("reportDeliveryId").notNull(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  accessLevel: mysqlEnum("accessLevel", ["read-only"]).notNull().default("read-only"),
+  expiresAt: timestamp("expiresAt").notNull(),
+  revokedAt: timestamp("revokedAt"),
+  createdByUserId: int("createdByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const clientWorkspaces = mysqlTable("clientWorkspaces", {
+  id: int("id").autoincrement().primaryKey(),
+  displayName: varchar("displayName", { length: 255 }).notNull(),
+  workspaceCode: varchar("workspaceCode", { length: 64 }).notNull().unique(),
+  classification: mysqlEnum("classification", ["synthetic", "internal", "restricted"]).notNull().default("synthetic"),
+  status: mysqlEnum("status", ["prospect", "active", "archived"]).notNull().default("active"),
+  ownerUserId: int("ownerUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const engagementTemplates = mysqlTable("engagementTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  templateJson: json("templateJson").notNull(),
+  createdByUserId: int("createdByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const engagementNotifications = mysqlTable("engagementNotifications", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  recipientUserId: int("recipientUserId").notNull(),
+  notificationType: mysqlEnum("notificationType", ["review-requested", "governance-updated", "report-approved", "retest-signed-off", "delivery-share-created"]).notNull(),
+  message: text("message").notNull(),
+  readAt: timestamp("readAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export type Engagement = typeof engagements.$inferSelect;
 export type AssessmentAsset = typeof assessmentAssets.$inferSelect;
 export type AssessmentFinding = typeof assessmentFindings.$inferSelect;
@@ -167,3 +258,11 @@ export type EngagementMember = typeof engagementMembers.$inferSelect;
 export type AssessmentTask = typeof assessmentTasks.$inferSelect;
 export type GeospatialArtifact = typeof geospatialArtifacts.$inferSelect;
 export type ReportDelivery = typeof reportDeliveries.$inferSelect;
+export type EngagementGovernance = typeof engagementGovernance.$inferSelect;
+export type ImportDecision = typeof importDecisions.$inferSelect;
+export type AssessmentComment = typeof assessmentComments.$inferSelect;
+export type TaskReviewEvent = typeof taskReviewEvents.$inferSelect;
+export type ReportShareLink = typeof reportShareLinks.$inferSelect;
+export type ClientWorkspace = typeof clientWorkspaces.$inferSelect;
+export type EngagementTemplate = typeof engagementTemplates.$inferSelect;
+export type EngagementNotification = typeof engagementNotifications.$inferSelect;

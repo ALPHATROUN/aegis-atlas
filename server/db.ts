@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { assessmentAssets, assessmentAuditEvents, assessmentFindings, assessmentTasks, engagementMembers, evidenceArtifacts, geospatialArtifacts, InsertUser, reportDeliveries, savedAtlasViews, users } from "../drizzle/schema";
+import { assessmentAssets, assessmentAuditEvents, assessmentComments, assessmentFindings, assessmentTasks, clientWorkspaces, engagementGovernance, engagementMembers, engagementNotifications, engagementTemplates, evidenceArtifacts, geospatialArtifacts, importDecisions, InsertUser, reportDeliveries, reportShareLinks, savedAtlasViews, taskReviewEvents, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -106,6 +106,12 @@ export async function appendAssessmentAuditEvent(input: AuditEventInput) {
   await db.insert(assessmentAuditEvents).values(input);
 }
 
+export async function listAssessmentAuditEvents(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(assessmentAuditEvents).where(eq(assessmentAuditEvents.engagementId, engagementId)).orderBy(desc(assessmentAuditEvents.createdAt));
+}
+
 export async function createSavedAtlasView(input: typeof savedAtlasViews.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available for saved-view persistence");
@@ -166,4 +172,143 @@ export async function getActiveEngagementMembership(engagementId: number, userId
   if (!db) return undefined;
   const rows = await db.select().from(engagementMembers).where(and(eq(engagementMembers.engagementId, engagementId), eq(engagementMembers.userId, userId), eq(engagementMembers.membershipStatus, "active"))).limit(1);
   return rows[0];
+}
+
+export async function listEngagementMembers(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(engagementMembers).where(eq(engagementMembers.engagementId, engagementId));
+}
+
+export async function upsertEngagementMember(input: typeof engagementMembers.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for engagement membership persistence");
+  const existing = await db.select().from(engagementMembers).where(and(eq(engagementMembers.engagementId, input.engagementId), eq(engagementMembers.userId, input.userId))).limit(1);
+  if (existing[0]) {
+    await db.update(engagementMembers).set({ workspaceRole: input.workspaceRole, membershipStatus: input.membershipStatus }).where(eq(engagementMembers.id, existing[0].id));
+    return existing[0].id;
+  }
+  const result = await db.insert(engagementMembers).values(input);
+  return Number(result[0].insertId);
+}
+
+export async function getEngagementGovernance(engagementId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(engagementGovernance).where(eq(engagementGovernance.engagementId, engagementId)).limit(1);
+  return rows[0];
+}
+
+export async function upsertEngagementGovernance(input: typeof engagementGovernance.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for engagement governance persistence");
+  const existing = await getEngagementGovernance(input.engagementId);
+  if (existing) {
+    await db.update(engagementGovernance).set({ scopeApprovalStatus: input.scopeApprovalStatus, approvedByUserId: input.approvedByUserId, approvedAt: input.approvedAt, importGateStatus: input.importGateStatus, dataOriginLabel: input.dataOriginLabel, retentionProfile: input.retentionProfile, redactionProfile: input.redactionProfile, watermarkText: input.watermarkText, updatedByUserId: input.updatedByUserId }).where(eq(engagementGovernance.id, existing.id));
+    return existing.id;
+  }
+  const result = await db.insert(engagementGovernance).values(input);
+  return Number(result[0].insertId);
+}
+
+export async function createImportDecision(input: typeof importDecisions.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for import decision persistence");
+  await db.insert(importDecisions).values(input);
+}
+
+export async function listImportDecisions(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(importDecisions).where(eq(importDecisions.engagementId, engagementId)).orderBy(desc(importDecisions.createdAt));
+}
+
+export async function createAssessmentComment(input: typeof assessmentComments.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for engagement comment persistence");
+  await db.insert(assessmentComments).values(input);
+}
+
+export async function listAssessmentComments(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(assessmentComments).where(eq(assessmentComments.engagementId, engagementId)).orderBy(desc(assessmentComments.createdAt));
+}
+
+export async function createTaskReviewEvent(input: typeof taskReviewEvents.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for task review persistence");
+  await db.insert(taskReviewEvents).values(input);
+}
+
+export async function listTaskReviewEvents(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(taskReviewEvents).where(eq(taskReviewEvents.engagementId, engagementId)).orderBy(desc(taskReviewEvents.createdAt));
+}
+
+export async function updateAssessmentTaskStatus(engagementId: number, taskId: number, taskStatus: "open" | "in-progress" | "blocked" | "done") {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for task update persistence");
+  await db.update(assessmentTasks).set({ taskStatus }).where(and(eq(assessmentTasks.id, taskId), eq(assessmentTasks.engagementId, engagementId)));
+}
+
+export async function approveReportDelivery(reportDeliveryId: number, approvedByUserId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for report approval persistence");
+  await db.update(reportDeliveries).set({ deliveryStatus: "approved", approvedByUserId }).where(eq(reportDeliveries.id, reportDeliveryId));
+}
+
+export async function createReportShareLink(input: typeof reportShareLinks.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for report share-link persistence");
+  await db.insert(reportShareLinks).values(input);
+}
+
+export async function listReportShareLinks(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(reportShareLinks).where(eq(reportShareLinks.engagementId, engagementId)).orderBy(desc(reportShareLinks.createdAt));
+}
+
+export async function createClientWorkspace(input: typeof clientWorkspaces.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for client workspace persistence");
+  await db.insert(clientWorkspaces).values(input);
+}
+
+export async function listClientWorkspaces(ownerUserId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(clientWorkspaces).where(eq(clientWorkspaces.ownerUserId, ownerUserId)).orderBy(desc(clientWorkspaces.createdAt));
+}
+
+export async function createEngagementTemplate(input: typeof engagementTemplates.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for engagement template persistence");
+  await db.insert(engagementTemplates).values(input);
+}
+
+export async function listEngagementTemplates() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(engagementTemplates).orderBy(desc(engagementTemplates.createdAt));
+}
+
+export async function createEngagementNotification(input: typeof engagementNotifications.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for notification persistence");
+  await db.insert(engagementNotifications).values(input);
+}
+
+export async function listEngagementNotifications(engagementId: number, recipientUserId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(engagementNotifications).where(and(eq(engagementNotifications.engagementId, engagementId), eq(engagementNotifications.recipientUserId, recipientUserId))).orderBy(desc(engagementNotifications.createdAt));
+}
+
+export async function markEngagementNotificationRead(notificationId: number, recipientUserId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for notification update persistence");
+  await db.update(engagementNotifications).set({ readAt: new Date() }).where(and(eq(engagementNotifications.id, notificationId), eq(engagementNotifications.recipientUserId, recipientUserId)));
 }

@@ -1,18 +1,42 @@
 import { COOKIE_NAME } from "@shared/const";
 import { TRPCError } from "@trpc/server";
+import { randomUUID } from "crypto";
 import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { buildCitedAssistantDraft, calculateTransparentRiskScore, previewAuthorizedImport } from "./assessment";
-import { appendAssessmentAuditEvent, createAssessmentTask, createEvidenceReference, createGeospatialArtifact, createReportDelivery, createSavedAtlasView, getActiveEngagementMembership, getSavedAtlasViewsForOwner, getWorkspaceRecords, listAssessmentTasks, listGeospatialArtifacts, listReportDeliveries } from "./db";
+import { appendAssessmentAuditEvent, approveReportDelivery, createAssessmentComment, createAssessmentTask, createClientWorkspace, createEngagementNotification, createEngagementTemplate, createEvidenceReference, createGeospatialArtifact, createImportDecision, createReportDelivery, createReportShareLink, createSavedAtlasView, createTaskReviewEvent, getActiveEngagementMembership, getEngagementGovernance, getSavedAtlasViewsForOwner, getWorkspaceRecords, listAssessmentAuditEvents, listAssessmentComments, listAssessmentTasks, listClientWorkspaces, listEngagementMembers, listEngagementNotifications, listEngagementTemplates, listGeospatialArtifacts, listImportDecisions, listReportDeliveries, listReportShareLinks, listTaskReviewEvents, markEngagementNotificationRead, updateAssessmentTaskStatus, upsertEngagementGovernance, upsertEngagementMember } from "./db";
 import { storeEvidenceArtifact } from "./evidenceStorage";
 import { validateEvidenceIntake } from "./governance";
+import { buildSyntheticBusinessSnapshot } from "@shared/businessMetrics";
+import { canManageEngagement, canReadEngagement, canReviewEngagement, canWriteEngagement, type EngagementRole } from "./accessControl";
 
 async function requireEngagementWrite(user: { id: number; role: "user" | "admin" }, engagementId: number) {
   if (user.role === "admin") return "manager" as const;
   const membership = await getActiveEngagementMembership(engagementId, user.id);
-  if (!membership || membership.workspaceRole === "read-only") throw new TRPCError({ code: "FORBIDDEN", message: "Active analyst or manager engagement membership is required for this operation" });
+  if (!membership || !canWriteEngagement(membership.workspaceRole as EngagementRole)) throw new TRPCError({ code: "FORBIDDEN", message: "Active analyst or manager engagement membership is required for this operation" });
+  return membership.workspaceRole;
+}
+
+async function requireEngagementReview(user: { id: number; role: "user" | "admin" }, engagementId: number) {
+  if (user.role === "admin") return "manager" as const;
+  const membership = await getActiveEngagementMembership(engagementId, user.id);
+  if (!membership || !canReviewEngagement(membership.workspaceRole as EngagementRole)) throw new TRPCError({ code: "FORBIDDEN", message: "Active reviewer or manager engagement membership is required for this operation" });
+  return membership.workspaceRole;
+}
+
+async function requireEngagementManager(user: { id: number; role: "user" | "admin" }, engagementId: number) {
+  if (user.role === "admin") return "manager" as const;
+  const membership = await getActiveEngagementMembership(engagementId, user.id);
+  if (!membership || !canManageEngagement(membership.workspaceRole as EngagementRole)) throw new TRPCError({ code: "FORBIDDEN", message: "Active manager engagement membership is required for this operation" });
+  return membership.workspaceRole;
+}
+
+async function requireEngagementRead(user: { id: number; role: "user" | "admin" }, engagementId: number) {
+  if (user.role === "admin") return "manager" as const;
+  const membership = await getActiveEngagementMembership(engagementId, user.id);
+  if (!membership || !canReadEngagement(membership.workspaceRole as EngagementRole)) throw new TRPCError({ code: "FORBIDDEN", message: "Active engagement membership is required to view private operations" });
   return membership.workspaceRole;
 }
 
@@ -37,8 +61,9 @@ export const appRouter = router({
       scope: ["*.helix-labs.example", "203.0.113.0/24", "Aurora Compute Region", "Northstar Relay Campus"],
       excluded: ["Production systems", "Non-lab addresses", "Credential attacks", "Exploit execution"],
     })),
+    businessSnapshot: protectedProcedure.query(() => buildSyntheticBusinessSnapshot()),
     previewImport: publicProcedure.input(z.object({
-      format: z.enum(["geojson", "csv", "json", "nmap-xml", "nuclei-jsonl", "kml", "gpx", "stac-item"]),
+      format: z.enum(["geojson", "coordinate-csv", "csv", "json", "nmap-xml", "nuclei-jsonl", "kml", "gpx", "stac-item"]),
       payload: z.string().max(250_000),
     })).mutation(({ input }) => previewAuthorizedImport({
       ...input,
@@ -89,13 +114,96 @@ export const appRouter = router({
       });
       return { recorded: true } as const;
     }),
-    operationsSnapshot: protectedProcedure.input(z.object({ engagementId: z.number().int().positive() })).query(async ({ input }) => {
-      const [tasks, geospatialArtifacts, reports] = await Promise.all([
+    operationsSnapshot: protectedProcedure.input(z.object({ engagementId: z.number().int().positive() })).query(async ({ ctx, input }) => {
+      await requireEngagementRead(ctx.user, input.engagementId);
+      const [tasks, geospatialArtifacts, reports, governance, members, comments, taskReviews, importDecisions, shareLinks, templates, clientWorkspaces, notifications, auditEvents] = await Promise.all([
         listAssessmentTasks(input.engagementId),
         listGeospatialArtifacts(input.engagementId),
         listReportDeliveries(input.engagementId),
+        getEngagementGovernance(input.engagementId),
+        listEngagementMembers(input.engagementId),
+        listAssessmentComments(input.engagementId),
+        listTaskReviewEvents(input.engagementId),
+        listImportDecisions(input.engagementId),
+        listReportShareLinks(input.engagementId),
+        listEngagementTemplates(),
+        listClientWorkspaces(ctx.user.id),
+        listEngagementNotifications(input.engagementId, ctx.user.id),
+        listAssessmentAuditEvents(input.engagementId),
       ]);
-      return { tasks, geospatialArtifacts, reports };
+      return { tasks, geospatialArtifacts, reports, governance, members, comments, taskReviews, importDecisions, shareLinks, templates, clientWorkspaces, notifications, auditEvents };
+    }),
+    createTemplate: protectedProcedure.input(z.object({ name: z.string().min(3).max(255), description: z.string().min(8).max(2000), templateJson: z.record(z.string(), z.unknown()) })).mutation(async ({ ctx, input }) => {
+      await requireEngagementManager(ctx.user, 1);
+      await createEngagementTemplate({ ...input, createdByUserId: ctx.user.id });
+      await appendAssessmentAuditEvent({ engagementId: 1, actorUserId: ctx.user.id, eventType: "engagement-template-created", summary: `Reusable template created: ${input.name}`, detailsJson: { synthetic: true } });
+      return { created: true } as const;
+    }),
+    createClientWorkspace: protectedProcedure.input(z.object({ displayName: z.string().min(3).max(255), workspaceCode: z.string().regex(/^CW-[A-Z0-9-]{3,60}$/), classification: z.enum(["synthetic", "internal", "restricted"]) })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Administrator access is required to create a client workspace" });
+      await createClientWorkspace({ ...input, status: "active", ownerUserId: ctx.user.id });
+      return { created: true } as const;
+    }),
+    markNotificationRead: protectedProcedure.input(z.object({ notificationId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      await markEngagementNotificationRead(input.notificationId, ctx.user.id);
+      return { read: true } as const;
+    }),
+    updateGovernance: protectedProcedure.input(z.object({
+      engagementId: z.number().int().positive(),
+      scopeApprovalStatus: z.enum(["draft", "pending-review", "approved", "expired", "blocked"]),
+      importGateStatus: z.enum(["review-required", "approved", "blocked"]),
+      dataOriginLabel: z.string().min(3).max(255),
+      retentionProfile: z.enum(["demo-session", "engagement", "legal-hold", "restricted"]),
+      redactionProfile: z.enum(["synthetic-demo", "internal", "client", "restricted"]),
+      watermarkText: z.string().min(3).max(255),
+    })).mutation(async ({ ctx, input }) => {
+      await requireEngagementManager(ctx.user, input.engagementId);
+      await upsertEngagementGovernance({ ...input, approvedByUserId: input.scopeApprovalStatus === "approved" ? ctx.user.id : undefined, approvedAt: input.scopeApprovalStatus === "approved" ? new Date() : undefined, updatedByUserId: ctx.user.id });
+      await createEngagementNotification({ engagementId: input.engagementId, recipientUserId: ctx.user.id, notificationType: "governance-updated", message: `Governance lifecycle saved: scope ${input.scopeApprovalStatus}; import gate ${input.importGateStatus}.` });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "governance-updated", summary: `Governance lifecycle updated: scope ${input.scopeApprovalStatus}, import gate ${input.importGateStatus}`, detailsJson: { retentionProfile: input.retentionProfile, redactionProfile: input.redactionProfile, watermarkText: input.watermarkText, synthetic: true } });
+      return { updated: true } as const;
+    }),
+    decideImport: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), artifactName: z.string().min(3).max(512), artifactHash: z.string().regex(/^[a-f0-9]{64}$/), disposition: z.enum(["approved", "quarantined", "rejected"]), rationale: z.string().min(8).max(2000) })).mutation(async ({ ctx, input }) => {
+      await requireEngagementWrite(ctx.user, input.engagementId);
+      await createImportDecision({ ...input, decidedByUserId: ctx.user.id });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "import-decision-recorded", summary: `Import ${input.disposition}: ${input.artifactName}`, detailsJson: { artifactHash: input.artifactHash, rationale: input.rationale, synthetic: true } });
+      return { recorded: true } as const;
+    }),
+    assignMember: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), userId: z.number().int().positive(), workspaceRole: z.enum(["manager", "analyst", "reviewer", "read-only"]), membershipStatus: z.enum(["invited", "active", "suspended"]) })).mutation(async ({ ctx, input }) => {
+      await requireEngagementManager(ctx.user, input.engagementId);
+      await upsertEngagementMember(input);
+      await createEngagementNotification({ engagementId: input.engagementId, recipientUserId: input.userId, notificationType: "review-requested", message: `You were assigned as ${input.workspaceRole} in the synthetic engagement workspace.` });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "member-assigned", summary: `Engagement member ${input.userId} set to ${input.workspaceRole} / ${input.membershipStatus}`, detailsJson: { memberUserId: input.userId, workspaceRole: input.workspaceRole, membershipStatus: input.membershipStatus, synthetic: true } });
+      return { assigned: true } as const;
+    }),
+    addComment: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), taskId: z.number().int().positive().optional(), findingId: z.number().int().positive().optional(), reportDeliveryId: z.number().int().positive().optional(), body: z.string().min(2).max(4000) })).mutation(async ({ ctx, input }) => {
+      await requireEngagementWrite(ctx.user, input.engagementId);
+      await createAssessmentComment({ ...input, authorUserId: ctx.user.id });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "collaboration-comment-added", summary: "Engagement review comment added", detailsJson: { taskId: input.taskId, findingId: input.findingId, reportDeliveryId: input.reportDeliveryId, synthetic: true } });
+      return { added: true } as const;
+    }),
+    reviewTask: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), taskId: z.number().int().positive(), reviewState: z.enum(["requested", "approved", "changes-requested", "retest-signed-off"]), summary: z.string().min(4).max(2000) })).mutation(async ({ ctx, input }) => {
+      await requireEngagementReview(ctx.user, input.engagementId);
+      await createTaskReviewEvent({ ...input, reviewerUserId: ctx.user.id });
+      if (input.reviewState === "approved" || input.reviewState === "retest-signed-off") await updateAssessmentTaskStatus(input.engagementId, input.taskId, "done");
+      await createEngagementNotification({ engagementId: input.engagementId, recipientUserId: ctx.user.id, notificationType: input.reviewState === "retest-signed-off" ? "retest-signed-off" : "review-requested", message: `Task ${input.taskId} review state recorded: ${input.reviewState}.` });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "task-review-recorded", summary: `Task ${input.taskId} ${input.reviewState}`, detailsJson: { reviewState: input.reviewState, reviewSummary: input.summary, synthetic: true } });
+      return { reviewed: true } as const;
+    }),
+    approveReport: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), reportDeliveryId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      await requireEngagementReview(ctx.user, input.engagementId);
+      await approveReportDelivery(input.reportDeliveryId, ctx.user.id);
+      await createEngagementNotification({ engagementId: input.engagementId, recipientUserId: ctx.user.id, notificationType: "report-approved", message: `Report delivery ${input.reportDeliveryId} was approved.` });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "report-approved", summary: `Report delivery ${input.reportDeliveryId} approved`, detailsJson: { reportDeliveryId: input.reportDeliveryId, synthetic: true } });
+      return { approved: true } as const;
+    }),
+    createReadOnlyShare: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), reportDeliveryId: z.number().int().positive(), expiresAt: z.date() })).mutation(async ({ ctx, input }) => {
+      await requireEngagementReview(ctx.user, input.engagementId);
+      const token = randomUUID().replace(/-/g, "");
+      await createReportShareLink({ ...input, token, accessLevel: "read-only", createdByUserId: ctx.user.id });
+      await createEngagementNotification({ engagementId: input.engagementId, recipientUserId: ctx.user.id, notificationType: "delivery-share-created", message: `Read-only delivery share created for report ${input.reportDeliveryId}.` });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "read-only-share-created", summary: `Read-only report share created for delivery ${input.reportDeliveryId}`, detailsJson: { reportDeliveryId: input.reportDeliveryId, expiresAt: input.expiresAt.toISOString(), synthetic: true } });
+      return { created: true, token } as const;
     }),
     createTask: protectedProcedure.input(z.object({
       engagementId: z.number().int().positive(),

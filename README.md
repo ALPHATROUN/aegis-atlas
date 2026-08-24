@@ -9,19 +9,19 @@ Aegis Atlas turns a fictional assessment engagement into a synchronized command 
 | Area | Included capability |
 | --- | --- |
 | Mission control | High-density dark workspace, engagement state, metrics, safety posture, scope and audit indicators |
-| Earth & local GIS | Interactive Leaflet Earth map with real street, satellite, terrain, dark, and Earth-overview tiles; selectable synthetic pointers, dynamic clusters, geofences, risk halos, dependency lines, coordinate readout, and GeoJSON export |
-| Spatiotemporal context | Synthetic STAC-style imagery catalog, acquisition and cloud metadata, temporal comparison, analyst annotation staging, persisted review status, and source attribution |
-| Local planning | Synthetic floor-plan and access-transition overlay, privacy-aware waypoint records, offline-pack staging, and scoped local-planning metadata |
+| Earth & local GIS | Interactive Leaflet Earth map with real street, satellite, terrain, dark, and Earth-overview tiles; selectable synthetic pointers, dynamic clusters, declared-geofence enforcement, observation-window filtering, risk halos, region aggregation, bounded LOS context, coordinate readout, and safeguarded GeoJSON/CSV/audit exports |
+| Spatiotemporal context | Synthetic STAC-style imagery catalog, acquisition and cloud metadata, temporal comparison, analyst annotation staging, persisted review restoration, and source attribution |
+| Local planning | Persisted synthetic floor-plan routes with access-transition nodes, rendered AOIs, privacy-aware waypoint coordinates, offline-pack metadata, and a clearly labeled bounded 3D local-terrain perspective with illustrative structures |
 | Security model | Synthetic domains, documentation hosts, services, sites, cloud regions, providers, dependencies, confidence, and provenance |
 | Findings | Evidence-backed severity, ownership, remediation, retest state, and transparent risk factors |
 | Relationships | Map-synchronized relationship graph with visual distinction for inferred links |
-| Imports | Preview-oriented GeoJSON, CSV, generic JSON, Nmap XML, and Nuclei JSONL support with scope evaluation and quarantine logic |
+| Imports | Preview-oriented GeoJSON with bounded Leaflet geometry display, dedicated coordinate CSV validation, generic CSV/JSON, Nmap XML, Nuclei JSONL, KML, GPX, and STAC Item support with scope evaluation and quarantine logic |
 | Intelligence | ATT&CK-style coverage states, STIX-compatible relationship preview, citation-preserving evidence context |
 | Reports | Executive, technical, geographic, evidence-register, and retest report views with export-integrity metadata |
 | Assistant | Citation-backed, analyst-confirmed draft assistant that cannot modify records automatically |
-| Production operations | Protected task, governed GIS artifact, report-delivery, role-aware engagement-write, audit, delivery-governance, and business-packaging workflows |
-| Persistence design | Database metadata schema for engagements, assets, findings, audit events, saved views, team membership, tasks, governed geospatial artifacts, report deliveries, and evidence references; secure object storage for evidence bytes |
-| Evidence intake | Bounded, media-type-validated upload to object storage with SHA-256, classification, custody metadata, storage reference, and audit event; no file bytes are stored in the database |
+| Production operations | Protected task, governed GIS artifact, report-delivery, role-aware engagement-write, reusable templates, synthetic client workspaces, scoped governance, import decisions, analyst comments, review/retest events, in-app notifications, approval records, read-only share records, immutable audit ledger, delivery-governance, and business-packaging workflows |
+| Persistence design | Database metadata schema for engagements, assets, findings, audit events, saved views, team membership, tasks, governed geospatial artifacts, report deliveries, evidence references, governance lifecycle, import decisions, collaboration comments, task-review events, and expiring share records; secure object storage for evidence bytes |
+| Evidence intake | Bounded, media-type-validated upload to object storage with SHA-256, classification, custody metadata, storage reference, retention state, and audit event; no file bytes are stored in the database |
 
 ## Safety and data boundary
 
@@ -49,7 +49,7 @@ pnpm check
 
 The project uses a React + TypeScript frontend, tRPC server, Drizzle/MySQL metadata model, and object-storage reference pattern. The application keeps evidence bytes outside the database and persists only reference metadata such as storage key, content type, hash, byte size, classification, and provenance.
 
-For implementation details, read the [Architecture Notes](docs/ARCHITECTURE.md), [Data Model Reference](docs/DATA_MODEL.md), [Production Readiness](docs/PRODUCTION_READINESS.md), [Deployment and Configuration Guide](docs/DEPLOYMENT_CONFIGURATION.md), [Business Model](docs/BUSINESS_MODEL.md), [Operations Runbook](docs/OPERATIONS_RUNBOOK.md), and [Product Roadmap](docs/ROADMAP.md).
+For implementation details, read the [Architecture Notes](docs/ARCHITECTURE.md), [Data Model Reference](docs/DATA_MODEL.md), [Production Readiness](docs/PRODUCTION_READINESS.md), [Governance and Collaboration](docs/GOVERNANCE_AND_COLLABORATION.md), [Deployment and Configuration Guide](docs/DEPLOYMENT_CONFIGURATION.md), [Business Model](docs/BUSINESS_MODEL.md), [Operations Runbook](docs/OPERATIONS_RUNBOOK.md), and [Product Roadmap](docs/ROADMAP.md).
 
 ## Sample artifacts
 
@@ -61,13 +61,18 @@ The [`samples/`](samples) directory contains completely synthetic fixtures for G
 client/src/pages/MissionControl.tsx   Mission-control workspace and interaction states
 client/src/components/EarthMap.tsx    Interactive Earth/satellite/terrain mapping and synthetic geographic layers
 client/src/components/AtlasGraph.tsx  Relationship visualization
-client/src/components/ProductionOperations.tsx  Production operations, governed delivery, and evidence intake
+client/src/components/ProductionOperations.tsx  Production operations, governed delivery, evidence intake, and typed business dashboard
+client/src/components/GovernanceCollaborationPanel.tsx  Authenticated governance, collaboration, review, and controlled-sharing patterns
 client/src/lib/atlasData.ts           Synthetic assessment dataset
+client/src/lib/gisWorkspace.ts        Persisted imagery, AOI, local-planning, and terrain-context restoration helpers
 server/assessment.ts                  Scope enforcement, risk scoring, import preview, cited draft logic
+server/accessControl.ts               Pure engagement role gates used by protected workflows
 server/evidenceStorage.ts             Object-storage metadata reference pattern
 server/governance.ts                  Evidence-media and coordinate-precision policy helpers
 server/*.test.ts                      Core workflow and governance tests
-drizzle/schema.ts                     Workspace metadata schema
+drizzle/schema.ts                     Workspace metadata schema and governance/collaboration lifecycle tables
+shared/exportGovernance.ts            Synthetic export watermark and safeguard manifest helper
+shared/businessMetrics.ts             Typed non-customer business demonstration data source
 docs/                                 Architecture, policy, and data reference
 samples/                              Safe synthetic import fixtures
 ```

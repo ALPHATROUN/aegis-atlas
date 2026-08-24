@@ -43,13 +43,13 @@
 - [x] Create a final checkpoint with every completed item accurately marked before delivery.
 - [x] Replace the illustrative atlas canvas with an interactive Earth-scale map engine featuring pan, zoom, location search, selectable pointers, clustering, and real geographic coordinates for synthetic records.
 - [x] Add switchable compliant basemap modes for streets, satellite imagery, terrain, and dark operational context, with clear source and use-boundary labeling.
-- [ ] Add an optional 3D globe/local terrain view with building, area-of-interest, and uncertainty overlays using synthetic assessment records only.
-- [ ] Add geospatial intelligence controls for geofences, buffers, distance/line-of-sight context, heatmaps, region aggregation, layers, legends, coordinates, time range, and map drawing/selection.
+- [x] Add an optional 3D globe/local terrain view with building, area-of-interest, and uncertainty overlays using synthetic assessment records only.
+- [x] Add geospatial intelligence controls for geofences, buffers, distance/line-of-sight context, heatmaps, region aggregation, layers, legends, coordinates, time range, and map drawing/selection.
 - [x] Add satellite, aerial, and remote-sensing workflow placeholders with STAC-style catalog metadata, acquisition time, cloud cover, provenance, annotation, and analyst review state.
 - [x] Add field/indoor/planning workflows for floor-plan overlays, offline packs, observation waypoints, route context, access transitions, and privacy-aware coordinate precision.
 - [x] Expand imports and exports for genuine GeoJSON display, KML/GPX planning interchange, coordinate CSV, STAC item metadata, image annotations, and audit-ready GIS snapshots.
 - [x] Add visible data-source attribution, imagery/date controls, coverage notices, out-of-scope geofence quarantine, and privacy-safe public-demo constraints.
-- [ ] Test Earth-map interactions and Earth/local/3D responsive layouts, update documentation, and save a new checkpoint before delivery.
+- [x] Test Earth-map interactions and Earth/local/3D responsive layouts, update documentation, and save a new checkpoint before delivery.
 - [x] Build a dedicated Earth and local GIS operations workspace with interactive satellite, terrain, street, and Earth overview basemaps; selectable pointers; AOI drawing; coordinate readout; dependency lines; risk halos; and GeoJSON export.
 - [x] Add a synthetic STAC-style imagery catalog with acquisition dates, cloud cover, provenance, analyst annotations, coverage notices, and compare-ready temporal selections.
 - [x] Add local-area and indoor planning modules for synthetic floor-plan overlays, access-transition modeling, location-precision controls, safe waypoint observations, and offline-pack planning records.
@@ -59,21 +59,28 @@
 - [x] Persist safe waypoint and offline-pack planning records with coordinate precision, scope, reviewer, and retention metadata.
 - [x] Implement interactive cluster drill-in that zooms to a grouped asset set and exposes the group members rather than selecting one member only.
 - [x] Load and render persisted STAC items, imagery annotations, analyst review state, and temporal comparison selection back into the catalog.
-- [ ] Render a persisted synthetic floor-plan overlay with explicit access-transition nodes and route state rather than a component-local diagram only.
+- [x] Render a persisted synthetic floor-plan overlay with explicit access-transition nodes and route state rather than a component-local diagram only.
 - [x] Persist actual safe waypoint coordinates and offline-pack records with reviewer, scope, precision, and retention metadata, then reload them into local planning.
-- [ ] Add reusable engagement templates, client/project workspace management, role-aware analyst/reviewer/manager permissions, team assignments, and immutable audit views.
+- [x] Add reusable engagement templates, client/project workspace management, role-aware analyst/reviewer/manager permissions, team assignments, and immutable audit views.
 - [x] Build secure evidence intake with object-storage references, file metadata validation, classification, retention state, chain-of-custody fields, malware-scan status placeholders, and evidence-to-finding linkage.
-- [ ] Add data-governance controls for scope approval, geofence quarantine, import approval gates, data-origin labels, configurable retention, redaction profiles, export watermarks, and privacy-safe coordinate rounding.
+- [x] Add data-governance controls for scope approval, geofence quarantine, import approval gates, data-origin labels, configurable retention, redaction profiles, export watermarks, and privacy-safe coordinate rounding.
 - [x] Add business-ready portfolio, engagement-health, remediation-program, executive-risk, and utilization dashboards using synthetic demonstration metrics only.
-- [ ] Add professional collaboration workflows for analyst tasks, review queues, comments, report approvals, retest sign-off, notifications, and client-ready read-only report sharing patterns.
+- [x] Add professional collaboration workflows for analyst tasks, review queues, comments, report approvals, retest sign-off, notifications, and client-ready read-only report sharing patterns.
 - [x] Add production readiness documentation covering deployment, configuration, security model, data lifecycle, operational runbook, pricing and packaging hypotheses, buyer personas, and roadmap.
-- [ ] Render persisted STAC and imagery-annotation artifacts as first-class catalog entries and restore saved primary/comparison selections into the imagery controls.
-- [ ] Reload persisted waypoint and offline-pack metadata into local-planning controls, including coordinates, reviewer, scope, precision, and retention details.
+- [x] Render persisted STAC and imagery-annotation artifacts as first-class catalog entries and restore saved primary/comparison selections into the imagery controls.
+- [x] Reload persisted waypoint and offline-pack metadata into local-planning controls, including coordinates, reviewer, scope, precision, and retention details.
 - [x] Add explicit evidence retention and comprehensive custody fields to the schema and UI, plus a visible evidence-to-finding linkage flow.
 - [x] Build dedicated synthetic portfolio health, engagement health, remediation program, executive risk, and utilization dashboards.
-- [ ] Create distinct synthetic drilldown panels for portfolio health, engagement health, remediation program, executive risk, and utilization, each with substantive metrics and trends.
-- [ ] Add loading, empty, and error states plus automated coverage for the business-operations dashboard data and rendering behavior.
+- [x] Create distinct synthetic drilldown panels for portfolio health, engagement health, remediation program, executive risk, and utilization, each with substantive metrics and trends.
+- [x] Add loading, empty, and error states plus automated coverage for the business-operations dashboard data and rendering behavior.
 - [x] Add an explicit deployment-configuration guide and versioned product roadmap to the production documentation set.
 - [x] Add broader automated test coverage for map state, geofencing, coordinate precision, imagery metadata validation, role controls, evidence custody, report generation, and export safeguards.
-- [ ] Implement and verify coordinate CSV import/export, image-annotation export, audit-ready GIS snapshot export, and explicit GeoJSON display workflows.
-- [ ] Add automated tests covering map state behavior, AOI/geofence logic, role-based mutation guards, report generation outputs, and export safeguard enforcement.
+- [x] Implement and verify coordinate CSV import/export, image-annotation export, audit-ready GIS snapshot export, and explicit GeoJSON display workflows.
+- [x] Add automated tests covering map state behavior, AOI/geofence logic, role-based mutation guards, report generation outputs, and export safeguard enforcement.
+- [x] Restore persisted STAC reviews, annotations, floor-plan routes, AOIs, waypoint packs, and offline planning metadata as structured GIS workspace records.
+- [x] Render approved or draft persisted AOIs and floor-plan access-transition routes directly in the Earth/local GIS views without introducing real-world targeting data.
+- [x] Add region aggregation, a map legend, and a clearly labeled synthetic line-of-sight context calculation to the spatial-analysis controls.
+- [x] Create a bounded synthetic 3D local-terrain perspective that visualizes persisted AOI, route, and uncertainty context without claiming remote sensing or building-stream coverage.
+- [x] Add engagement scope approval, governed import decision, data-origin, retention, redaction profile, export manifest, and watermark persistence with auditable lifecycle events.
+- [x] Add role-aware member assignment, task review states, comments, report approval, retest sign-off, and read-only share-token workflow records.
+- [x] Add explicit protected dashboard loading, empty, and error rendering backed by a typed synthetic portfolio data source.

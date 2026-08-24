@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 export type AssessmentSeverity = "critical" | "high" | "medium" | "low";
 export type AssessmentConfidence = "confirmed" | "high" | "medium" | "inferred";
-export type ImportFormat = "geojson" | "csv" | "json" | "nmap-xml" | "nuclei-jsonl" | "kml" | "gpx" | "stac-item";
+export type ImportFormat = "geojson" | "coordinate-csv" | "csv" | "json" | "nmap-xml" | "nuclei-jsonl" | "kml" | "gpx" | "stac-item";
 
 export type ScopePolicy = {
   allowedFragments: string[];
@@ -35,6 +35,16 @@ export function validateImportSchema(format: ImportFormat, payload: string) {
     return header?.split(",").map((item) => item.trim().toLowerCase()).includes("host")
       ? { valid: true, message: "CSV header contains a required host column" }
       : { valid: false, message: "CSV requires a host column" };
+  }
+  if (format === "coordinate-csv") {
+    const [header, ...rows] = payload.split(/\r?\n/).filter(Boolean);
+    const columns = header?.split(",").map((item) => item.trim().toLowerCase()) ?? [];
+    const nameIndex = columns.findIndex((column) => column === "name" || column === "host");
+    const latitudeIndex = columns.indexOf("latitude");
+    const longitudeIndex = columns.indexOf("longitude");
+    if (nameIndex < 0 || latitudeIndex < 0 || longitudeIndex < 0) return { valid: false, message: "Coordinate CSV requires name (or host), latitude, and longitude columns" };
+    const invalid = rows.some((row) => { const fields = row.split(","); const latitude = Number(fields[latitudeIndex]); const longitude = Number(fields[longitudeIndex]); return !fields[nameIndex]?.trim() || !Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180; });
+    return invalid ? { valid: false, message: "Coordinate CSV contains an invalid name or latitude/longitude value" } : { valid: true, message: "Coordinate CSV contains named synthetic coordinate records" };
   }
   if (format === "nmap-xml") return payload.includes("<nmaprun") ? { valid: true, message: "Nmap XML root element detected" } : { valid: false, message: "Nmap XML root element is missing" };
   if (format === "kml") return payload.includes("<kml") ? { valid: true, message: "KML document root detected" } : { valid: false, message: "KML requires a kml document root" };
@@ -83,6 +93,14 @@ export function enforceScope(subject: string, policy: ScopePolicy) {
 function subjectsFromPayload(format: ImportFormat, payload: string) {
   if (format === "csv") {
     return payload.split(/\r?\n/).slice(1).map((line, index) => ({ line: index + 2, subject: line.split(",")[0]?.trim() ?? "" })).filter((item) => item.subject);
+  }
+  if (format === "coordinate-csv") {
+    const [header, ...rows] = payload.split(/\r?\n/).filter(Boolean);
+    const columns = header.split(",").map((item) => item.trim().toLowerCase());
+    const nameIndex = columns.findIndex((column) => column === "name" || column === "host");
+    const latitudeIndex = columns.indexOf("latitude");
+    const longitudeIndex = columns.indexOf("longitude");
+    return rows.map((row, index) => { const fields = row.split(","); const latitude = Number(fields[latitudeIndex]); const longitude = Number(fields[longitudeIndex]); const name = fields[nameIndex]?.trim() ?? ""; return { line: index + 2, subject: Number.isFinite(latitude) && Number.isFinite(longitude) ? name : "[invalid coordinate record]" }; }).filter((item) => item.subject);
   }
   if (format === "nmap-xml") {
     return Array.from(payload.matchAll(/addr=["']([^"']+)["']/g)).map((match, index) => ({ line: index + 1, subject: match[1] }));
