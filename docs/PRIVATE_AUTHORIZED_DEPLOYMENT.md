@@ -58,6 +58,14 @@ The protected workspace now persists exposure-validation records with a GIS coor
 
 Private delivery governance also persists delivery-exception requests and delivery attestations, including a retest-sign-off attestation type. Connector reviews and compliance-evidence records are independent governed records, so a future private tenant can demonstrate which adapter is under review, who owns it, which residency applies, and what compliance evidence supports readiness. The public application stores only synthetic workflow metadata and keeps all external adapters disconnected.
 
+## Expanded assessment operating models
+
+The current workspace also includes synthetic campaign orchestration, a security-relationship graph, a change-intelligence queue, policy dry-run reasoning, an offline-safe field companion model, data lineage, evidence-redaction planning, executive risk appetite, and provider/supply-chain assurance. These are decision-support and workflow-design controls; they do not scan, collect, deliver, or act against external systems.
+
+## Inclusive and mobile-ready design
+
+Internationalization readiness includes locale selection, text-scale planning, right-to-left review requirements, and translated safety-label guidance. The accessibility model includes high-contrast verification, keyboard command controls, focus-visible interactions, responsive navigation, and reduced-motion-aware styling. A private mobile companion must add MDM, device attestation, encrypted offline storage, consented synchronization, and remote revocation before handling organization data.
+
 ## Recommended private deployment sequence
 
 1. Establish a signed authorization, scope statement, exclusions, engagement expiry, and accountable sponsor.

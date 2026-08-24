@@ -113,3 +113,9 @@
 - [x] Add assurance controls for policy library, control ownership, mapping evidence, attestation cycle, exception register, legal-hold planner, data-residency matrix, privacy impact checklist, and audit pack builder.
 - [x] Add engineering quality controls for a product health dashboard, client performance budgets, accessibility checklist, API changelog, webhook contract examples, test matrix, recovery playbook, release checklist, and architecture decision records.
 - [x] Add high-polish UX refinements for first-run orientation, contextual help, keyboard command palette, responsive density controls, loading skeletons, empty-state guidance, export guardrails, and visual consistency review.
+- [x] Add a synthetic assessment campaign orchestration workspace with milestones, approvals, staffing, dependencies, budget envelope, capacity, and closure criteria.
+- [x] Add a security knowledge graph and change-intelligence workspace linking assets, identities, services, data, providers, controls, evidence, findings, owners, and synthetic change deltas.
+- [x] Add policy-as-code and control-mapping workspaces for scope, retention, redaction, delivery, connector, export, framework mapping, gap tracking, evidence requests, exceptions, and attestations.
+- [x] Add a synthetic field companion workspace for offline-safe work packs, checklist execution, QR/asset tags, observation staging, and governed evidence metadata.
+- [x] Add data-lineage explorer, evidence redaction workbench, executive risk-appetite planning, and provider/supply-chain assurance models.
+- [x] Add internationalization, high-contrast accessibility, locale/readability controls, and a private mobile-companion readiness design without collecting real field data.
