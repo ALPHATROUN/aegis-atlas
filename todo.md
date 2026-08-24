@@ -47,7 +47,7 @@
 - [ ] Add geospatial intelligence controls for geofences, buffers, distance/line-of-sight context, heatmaps, region aggregation, layers, legends, coordinates, time range, and map drawing/selection.
 - [x] Add satellite, aerial, and remote-sensing workflow placeholders with STAC-style catalog metadata, acquisition time, cloud cover, provenance, annotation, and analyst review state.
 - [x] Add field/indoor/planning workflows for floor-plan overlays, offline packs, observation waypoints, route context, access transitions, and privacy-aware coordinate precision.
-- [ ] Expand imports and exports for genuine GeoJSON display, KML/GPX planning interchange, coordinate CSV, STAC item metadata, image annotations, and audit-ready GIS snapshots.
+- [x] Expand imports and exports for genuine GeoJSON display, KML/GPX planning interchange, coordinate CSV, STAC item metadata, image annotations, and audit-ready GIS snapshots.
 - [x] Add visible data-source attribution, imagery/date controls, coverage notices, out-of-scope geofence quarantine, and privacy-safe public-demo constraints.
 - [ ] Test Earth-map interactions and Earth/local/3D responsive layouts, update documentation, and save a new checkpoint before delivery.
 - [x] Build a dedicated Earth and local GIS operations workspace with interactive satellite, terrain, street, and Earth overview basemaps; selectable pointers; AOI drawing; coordinate readout; dependency lines; risk halos; and GeoJSON export.
@@ -70,6 +70,10 @@
 - [ ] Render persisted STAC and imagery-annotation artifacts as first-class catalog entries and restore saved primary/comparison selections into the imagery controls.
 - [ ] Reload persisted waypoint and offline-pack metadata into local-planning controls, including coordinates, reviewer, scope, precision, and retention details.
 - [x] Add explicit evidence retention and comprehensive custody fields to the schema and UI, plus a visible evidence-to-finding linkage flow.
-- [ ] Build dedicated synthetic portfolio health, engagement health, remediation program, executive risk, and utilization dashboards.
+- [x] Build dedicated synthetic portfolio health, engagement health, remediation program, executive risk, and utilization dashboards.
+- [ ] Create distinct synthetic drilldown panels for portfolio health, engagement health, remediation program, executive risk, and utilization, each with substantive metrics and trends.
+- [ ] Add loading, empty, and error states plus automated coverage for the business-operations dashboard data and rendering behavior.
 - [x] Add an explicit deployment-configuration guide and versioned product roadmap to the production documentation set.
-- [ ] Add broader automated test coverage for map state, geofencing, coordinate precision, imagery metadata validation, role controls, evidence custody, report generation, and export safeguards.
+- [x] Add broader automated test coverage for map state, geofencing, coordinate precision, imagery metadata validation, role controls, evidence custody, report generation, and export safeguards.
+- [ ] Implement and verify coordinate CSV import/export, image-annotation export, audit-ready GIS snapshot export, and explicit GeoJSON display workflows.
+- [ ] Add automated tests covering map state behavior, AOI/geofence logic, role-based mutation guards, report generation outputs, and export safeguard enforcement.

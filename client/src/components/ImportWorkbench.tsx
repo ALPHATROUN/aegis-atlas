@@ -1,14 +1,17 @@
 import { trpc } from "@/lib/trpc";
 import { ChevronDown, Copy, FileWarning, Upload } from "lucide-react";
 
-const formats = ["GeoJSON", "CSV", "Generic JSON", "Nmap XML", "Nuclei JSONL"] as const;
-const formatMap = { "GeoJSON": "geojson", "CSV": "csv", "Generic JSON": "json", "Nmap XML": "nmap-xml", "Nuclei JSONL": "nuclei-jsonl" } as const;
+const formats = ["GeoJSON", "CSV", "Generic JSON", "Nmap XML", "Nuclei JSONL", "KML planning", "GPX waypoints", "STAC Item"] as const;
+const formatMap = { "GeoJSON": "geojson", "CSV": "csv", "Generic JSON": "json", "Nmap XML": "nmap-xml", "Nuclei JSONL": "nuclei-jsonl", "KML planning": "kml", "GPX waypoints": "gpx", "STAC Item": "stac-item" } as const;
 const samples = {
   "GeoJSON": JSON.stringify({ type: "FeatureCollection", features: [{ type: "Feature", properties: { name: "edge.helix-labs.example" }, geometry: { type: "Point", coordinates: [-12.8, 44.9] } }, { type: "Feature", properties: { name: "production.real-target.example" }, geometry: { type: "Point", coordinates: [1, 1] } }] }, null, 2),
   "CSV": "host,severity\nedge.helix-labs.example,high\nedge.helix-labs.example,high\nproduction.real-target.example,critical",
   "Generic JSON": JSON.stringify({ items: [{ name: "Aurora Compute Region" }, { name: "Northstar Relay Campus" }, { name: "production.real-target.example" }] }, null, 2),
   "Nmap XML": "<?xml version=\"1.0\"?><nmaprun><host><address addr=\"203.0.113.18\" addrtype=\"ipv4\"/></host><host><address addr=\"production.real-target.example\" addrtype=\"hostname\"/></host></nmaprun>",
   "Nuclei JSONL": "{\"host\":\"edge.helix-labs.example\"}\n{\"host\":\"EDGE.HELIX-LABS.EXAMPLE\"}\n{\"host\":\"production.real-target.example\"}",
+  "KML planning": "<kml><Document><Placemark><name>Northstar Relay Campus</name></Placemark><Placemark><name>production.real-target.example</name></Placemark></Document></kml>",
+  "GPX waypoints": "<gpx><wpt lat=\"64.1012\" lon=\"-23.1098\"/><wpt lat=\"64.1031\" lon=\"-23.1054\"/></gpx>",
+  "STAC Item": "{\"type\":\"Feature\",\"stac_version\":\"1.0.0\",\"id\":\"northstar-scene\",\"properties\":{\"name\":\"Northstar Relay Campus\",\"datetime\":\"2026-08-24T09:42:00Z\"}}",
 };
 
 export default function ImportWorkbench({ selected, setSelected }: { selected: string; setSelected: (value: string) => void }) {

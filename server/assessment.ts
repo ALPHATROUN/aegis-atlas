@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 export type AssessmentSeverity = "critical" | "high" | "medium" | "low";
 export type AssessmentConfidence = "confirmed" | "high" | "medium" | "inferred";
-export type ImportFormat = "geojson" | "csv" | "json" | "nmap-xml" | "nuclei-jsonl";
+export type ImportFormat = "geojson" | "csv" | "json" | "nmap-xml" | "nuclei-jsonl" | "kml" | "gpx" | "stac-item";
 
 export type ScopePolicy = {
   allowedFragments: string[];
@@ -37,13 +37,16 @@ export function validateImportSchema(format: ImportFormat, payload: string) {
       : { valid: false, message: "CSV requires a host column" };
   }
   if (format === "nmap-xml") return payload.includes("<nmaprun") ? { valid: true, message: "Nmap XML root element detected" } : { valid: false, message: "Nmap XML root element is missing" };
+  if (format === "kml") return payload.includes("<kml") ? { valid: true, message: "KML document root detected" } : { valid: false, message: "KML requires a kml document root" };
+  if (format === "gpx") return payload.includes("<gpx") ? { valid: true, message: "GPX document root detected" } : { valid: false, message: "GPX requires a gpx document root" };
   if (format === "nuclei-jsonl") {
     const invalid = payload.split(/\r?\n/).filter(Boolean).some((line) => { try { const value = JSON.parse(line) as { host?: string; matched?: string }; return !value.host && !value.matched; } catch { return true; } });
     return invalid ? { valid: false, message: "Each JSONL record must include host or matched" } : { valid: true, message: "All Nuclei JSONL records include a target field" };
   }
   try {
-    const parsed = JSON.parse(payload) as { type?: string; features?: unknown[]; items?: unknown[] };
+    const parsed = JSON.parse(payload) as { type?: string; features?: unknown[]; items?: unknown[]; stac_version?: string; properties?: unknown };
     if (format === "geojson") return parsed.type === "FeatureCollection" && Array.isArray(parsed.features) ? { valid: true, message: "GeoJSON FeatureCollection structure detected" } : { valid: false, message: "GeoJSON requires a FeatureCollection with features" };
+    if (format === "stac-item") return parsed.type === "Feature" && Boolean(parsed.stac_version) && Boolean(parsed.properties) ? { valid: true, message: "STAC Item feature and version detected" } : { valid: false, message: "STAC Item requires Feature type, stac_version, and properties" };
     return Array.isArray(parsed.items) || Array.isArray(parsed.features) ? { valid: true, message: "Generic JSON collection structure detected" } : { valid: false, message: "Generic JSON requires an items or features collection" };
   } catch {
     return { valid: false, message: "Payload is not valid JSON" };
@@ -94,10 +97,12 @@ function subjectsFromPayload(format: ImportFormat, payload: string) {
       }
     });
   }
-  if (format === "geojson" || format === "json") {
+  if (format === "kml") return Array.from(payload.matchAll(/<name>([^<]+)<\/name>/g)).map((match, index) => ({ line: index + 1, subject: match[1].trim() }));
+  if (format === "gpx") return Array.from(payload.matchAll(/<(?:wpt|trkpt)[^>]*lat="([^"]+)"[^>]*lon="([^"]+)"[^>]*>/g)).map((match, index) => ({ line: index + 1, subject: `${match[1]},${match[2]}` }));
+  if (format === "geojson" || format === "json" || format === "stac-item") {
     try {
-      const parsed = JSON.parse(payload) as { features?: Array<{ properties?: Record<string, unknown> }>; items?: Array<Record<string, unknown>> };
-      const records = parsed.features?.map((feature) => feature.properties ?? {}) ?? parsed.items ?? [];
+      const parsed = JSON.parse(payload) as { features?: Array<{ properties?: Record<string, unknown> }>; items?: Array<Record<string, unknown>>; properties?: Record<string, unknown>; id?: string };
+      const records = format === "stac-item" ? [parsed.properties ?? { name: parsed.id ?? "[unnamed STAC item]" }] : parsed.features?.map((feature) => feature.properties ?? {}) ?? parsed.items ?? [];
       return records.map((record, index) => ({ line: index + 1, subject: String(record.name ?? record.host ?? record.domain ?? record.ip ?? "[unnamed record]") }));
     } catch {
       return [{ line: 1, subject: "[invalid JSON payload]" }];

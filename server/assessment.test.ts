@@ -53,5 +53,14 @@ describe("format-aware schema checks", () => {
   it("reports the specific parser expectation for supported input formats", () => {
     expect(validateImportSchema("csv", "host,severity\nedge.helix-labs.example,high")).toMatchObject({ valid: true });
     expect(validateImportSchema("geojson", "{\"type\":\"Feature\"}")).toEqual({ valid: false, message: "GeoJSON requires a FeatureCollection with features" });
+    expect(validateImportSchema("kml", "<kml><Document/></kml>")).toMatchObject({ valid: true });
+    expect(validateImportSchema("gpx", "<gpx><wpt lat=\"64.10\" lon=\"-23.10\"/></gpx>")).toMatchObject({ valid: true });
+    expect(validateImportSchema("stac-item", "{\"type\":\"Feature\",\"stac_version\":\"1.0.0\",\"properties\":{\"name\":\"Northstar\"}}")).toMatchObject({ valid: true });
+  });
+
+  it("quarantines a KML planning object that fails the declared synthetic scope policy", () => {
+    const result = previewAuthorizedImport({ format: "kml", payload: "<kml><Placemark><name>Northstar Relay Campus</name></Placemark><Placemark><name>production.real-target.example</name></Placemark></kml>", policy });
+    expect(result.acceptedCount).toBe(1);
+    expect(result.quarantinedCount).toBe(1);
   });
 });

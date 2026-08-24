@@ -38,7 +38,7 @@ export const appRouter = router({
       excluded: ["Production systems", "Non-lab addresses", "Credential attacks", "Exploit execution"],
     })),
     previewImport: publicProcedure.input(z.object({
-      format: z.enum(["geojson", "csv", "json", "nmap-xml", "nuclei-jsonl"]),
+      format: z.enum(["geojson", "csv", "json", "nmap-xml", "nuclei-jsonl", "kml", "gpx", "stac-item"]),
       payload: z.string().max(250_000),
     })).mutation(({ input }) => previewAuthorizedImport({
       ...input,
