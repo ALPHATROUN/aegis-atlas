@@ -30,3 +30,7 @@ The expanded operations workspace exposes planning controls for private integrat
 ## Experience and accessibility checks
 
 The command center includes a dismissible first-run orientation, a keyboard command palette, contextual shortcut guidance, density controls, responsive mobile navigation, focus-visible controls, and component-level loading, empty, and error states. Private teams should test these flows with keyboard-only navigation and assistive technology before each release, then capture findings in the release checklist.
+
+## Public-safe reliability model
+
+The public workspace now includes planning artifacts for SLO and error-budget design, monitoring and incident timelines, restore-drill worksheets, performance and dependency review, release risk, accessibility, localization, usability, service operations, delivery assurance, supplier review, and commercial readiness. These remain synthetic and do not create operational telemetry, alerts, customer communications, contracts, or recovery actions.
