@@ -20,6 +20,7 @@ Aegis Atlas turns a fictional assessment engagement into a synchronized command 
 | Reports | Executive, technical, geographic, evidence-register, and retest report views with export-integrity metadata |
 | Assistant | Citation-backed, analyst-confirmed draft assistant that cannot modify records automatically |
 | Production operations | Protected task, governed GIS artifact, report-delivery, role-aware engagement-write, reusable templates, synthetic client workspaces, scoped governance, import decisions, analyst comments, review/retest events, in-app notifications, approval records, read-only share records, immutable audit ledger, delivery-governance, and business-packaging workflows |
+| Private deployment readiness | Fail-closed authorization checklist, governed adapter inventory, campaign planner, business-service ownership, analyst exposure validation, GIS coverage gaps, client delivery assurance, and enterprise governance posture—without live external connectivity in the public build |
 | Persistence design | Database metadata schema for engagements, assets, findings, audit events, saved views, team membership, tasks, governed geospatial artifacts, report deliveries, evidence references, governance lifecycle, import decisions, collaboration comments, task-review events, and expiring share records; secure object storage for evidence bytes |
 | Evidence intake | Bounded, media-type-validated upload to object storage with SHA-256, classification, custody metadata, storage reference, retention state, and audit event; no file bytes are stored in the database |
 
@@ -49,7 +50,7 @@ pnpm check
 
 The project uses a React + TypeScript frontend, tRPC server, Drizzle/MySQL metadata model, and object-storage reference pattern. The application keeps evidence bytes outside the database and persists only reference metadata such as storage key, content type, hash, byte size, classification, and provenance.
 
-For implementation details, read the [Architecture Notes](docs/ARCHITECTURE.md), [Data Model Reference](docs/DATA_MODEL.md), [Production Readiness](docs/PRODUCTION_READINESS.md), [Governance and Collaboration](docs/GOVERNANCE_AND_COLLABORATION.md), [Deployment and Configuration Guide](docs/DEPLOYMENT_CONFIGURATION.md), [Business Model](docs/BUSINESS_MODEL.md), [Operations Runbook](docs/OPERATIONS_RUNBOOK.md), and [Product Roadmap](docs/ROADMAP.md).
+For implementation details, read the [Architecture Notes](docs/ARCHITECTURE.md), [Data Model Reference](docs/DATA_MODEL.md), [Production Readiness](docs/PRODUCTION_READINESS.md), [Governance and Collaboration](docs/GOVERNANCE_AND_COLLABORATION.md), [Private Authorized Deployment Model](docs/PRIVATE_AUTHORIZED_DEPLOYMENT.md), [Deployment and Configuration Guide](docs/DEPLOYMENT_CONFIGURATION.md), [Business Model](docs/BUSINESS_MODEL.md), [Operations Runbook](docs/OPERATIONS_RUNBOOK.md), and [Product Roadmap](docs/ROADMAP.md).
 
 ## Sample artifacts
 

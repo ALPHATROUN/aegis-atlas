@@ -250,6 +250,73 @@ export const engagementNotifications = mysqlTable("engagementNotifications", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const exposureValidations = mysqlTable("exposureValidations", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  title: varchar("title", { length: 512 }).notNull(),
+  gisZone: varchar("gisZone", { length: 255 }).notNull(),
+  evidenceReference: varchar("evidenceReference", { length: 768 }).notNull(),
+  confidence: mysqlEnum("confidence", ["none", "inferred", "medium", "high"]).notNull().default("inferred"),
+  validationState: mysqlEnum("validationState", ["hypothesis", "evidence-review", "analyst-confirmed", "rejected"]).notNull().default("hypothesis"),
+  reviewerUserId: int("reviewerUserId"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdByUserId: int("createdByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const deliveryExceptions = mysqlTable("deliveryExceptions", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  reportDeliveryId: int("reportDeliveryId"),
+  title: varchar("title", { length: 512 }).notNull(),
+  rationale: text("rationale").notNull(),
+  exceptionStatus: mysqlEnum("exceptionStatus", ["requested", "approved", "rejected", "expired"]).notNull().default("requested"),
+  expiresAt: timestamp("expiresAt"),
+  requestedByUserId: int("requestedByUserId").notNull(),
+  decidedByUserId: int("decidedByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const deliveryAttestations = mysqlTable("deliveryAttestations", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  reportDeliveryId: int("reportDeliveryId"),
+  audience: mysqlEnum("audience", ["executive", "technical", "risk", "client"]).notNull(),
+  attestationType: mysqlEnum("attestationType", ["delivery-approval", "evidence-review", "retest-sign-off", "closure"]).notNull(),
+  attestationState: mysqlEnum("attestationState", ["pending", "attested", "declined"]).notNull().default("pending"),
+  notes: text("notes").notNull(),
+  attestedByUserId: int("attestedByUserId"),
+  attestedAt: timestamp("attestedAt"),
+  createdByUserId: int("createdByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const connectorReviews = mysqlTable("connectorReviews", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  adapterType: mysqlEnum("adapterType", ["cmdb", "cloud-identity", "vulnerability-edr", "ticketing-grc", "gis-facilities"]).notNull(),
+  reviewStatus: mysqlEnum("reviewStatus", ["planned", "security-review", "approved", "blocked", "revoked"]).notNull().default("planned"),
+  connectorOwner: varchar("connectorOwner", { length: 255 }).notNull(),
+  dataResidency: varchar("dataResidency", { length: 255 }).notNull(),
+  evidenceJson: json("evidenceJson").notNull(),
+  reviewedByUserId: int("reviewedByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const complianceEvidence = mysqlTable("complianceEvidence", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  controlName: varchar("controlName", { length: 255 }).notNull(),
+  controlStatus: mysqlEnum("controlStatus", ["planned", "in-review", "satisfied", "exception"]).notNull().default("planned"),
+  evidenceReference: varchar("evidenceReference", { length: 768 }).notNull(),
+  accountableOwner: varchar("accountableOwner", { length: 255 }).notNull(),
+  reviewedByUserId: int("reviewedByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export type Engagement = typeof engagements.$inferSelect;
 export type AssessmentAsset = typeof assessmentAssets.$inferSelect;
 export type AssessmentFinding = typeof assessmentFindings.$inferSelect;
@@ -266,3 +333,8 @@ export type ReportShareLink = typeof reportShareLinks.$inferSelect;
 export type ClientWorkspace = typeof clientWorkspaces.$inferSelect;
 export type EngagementTemplate = typeof engagementTemplates.$inferSelect;
 export type EngagementNotification = typeof engagementNotifications.$inferSelect;
+export type ExposureValidation = typeof exposureValidations.$inferSelect;
+export type DeliveryException = typeof deliveryExceptions.$inferSelect;
+export type DeliveryAttestation = typeof deliveryAttestations.$inferSelect;
+export type ConnectorReview = typeof connectorReviews.$inferSelect;
+export type ComplianceEvidence = typeof complianceEvidence.$inferSelect;

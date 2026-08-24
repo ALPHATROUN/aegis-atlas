@@ -1,0 +1,36 @@
+import { CheckCircle2, CircleAlert, Clock3, MapPinned, ShieldQuestion, XCircle } from "lucide-react";
+import { useMemo, useState } from "react";
+
+type ValidationState = "hypothesis" | "evidence-review" | "analyst-confirmed" | "rejected";
+
+const initialPaths = [
+  { id: "path-edge", label: "Internet edge → partner gateway → telemetry relay", zone: "Northstar relay campus", evidence: "Synthetic edge inventory + custody reference", confidence: "Medium", state: "evidence-review" as ValidationState },
+  { id: "path-cloud", label: "Identity boundary → Aurora compute → API control plane", zone: "Aurora compute region", evidence: "Synthetic cloud relationship metadata", confidence: "Inferred", state: "hypothesis" as ValidationState },
+  { id: "path-site", label: "Access transition → operations zone → protected service", zone: "Northstar floor-plan work zone", evidence: "Synthetic route planning record", confidence: "Low", state: "hypothesis" as ValidationState },
+  { id: "path-provider", label: "Provider dependency → regional reporting path", zone: "Solstice transit context", evidence: "Synthetic provider provenance record", confidence: "High", state: "analyst-confirmed" as ValidationState },
+];
+
+const stateMeta: Record<ValidationState, { label: string; tone: string; icon: typeof ShieldQuestion }> = {
+  hypothesis: { label: "Hypothesis", tone: "text-[#b9c7ff] border-[#87bfff]/20 bg-[#87bfff]/[.05]", icon: ShieldQuestion },
+  "evidence-review": { label: "Evidence review", tone: "text-[#f2cb82] border-[#e8b760]/20 bg-[#e8b760]/[.05]", icon: Clock3 },
+  "analyst-confirmed": { label: "Confirmed", tone: "text-[#bde0b5] border-[#83a77c]/20 bg-[#83a77c]/[.05]", icon: CheckCircle2 },
+  rejected: { label: "Rejected", tone: "text-[#ffab9d] border-[#ee7664]/20 bg-[#ee7664]/[.05]", icon: XCircle },
+};
+
+export default function ExposureValidationBoard() {
+  const [paths, setPaths] = useState(initialPaths);
+  const [selectedId, setSelectedId] = useState(initialPaths[0].id);
+  const selected = paths.find((path) => path.id === selectedId) ?? paths[0];
+  const coverage = useMemo(() => [
+    { zone: "Northstar relay campus", reviewed: paths.filter((path) => path.zone.includes("Northstar") && path.state !== "hypothesis").length, total: 2, gap: "Onsite evidence owner confirmation" },
+    { zone: "Aurora compute region", reviewed: paths.filter((path) => path.zone.includes("Aurora") && path.state !== "hypothesis").length, total: 1, gap: "Identity connector approval" },
+    { zone: "Solstice transit context", reviewed: paths.filter((path) => path.zone.includes("Solstice") && path.state !== "hypothesis").length, total: 1, gap: "Provider owner attestation" },
+  ], [paths]);
+  const transition = (state: ValidationState) => setPaths((current) => current.map((path) => path.id === selected.id ? { ...path, state, confidence: state === "analyst-confirmed" ? "High" : state === "rejected" ? "None" : path.confidence } : path));
+  const SelectedIcon = stateMeta[selected.state].icon;
+  return <section className="mt-4 atlas-surface p-4"><div className="flex flex-col justify-between gap-3 md:flex-row md:items-start"><div><p className="eyebrow">EVIDENCE-BACKED EXPOSURE VALIDATION</p><h3 className="mt-1 font-['Barlow_Condensed'] text-2xl font-semibold tracking-[.07em] text-white">ANALYST DECISION BOARD</h3><p className="mt-1 max-w-3xl text-xs leading-5 text-white/52">Model possible exposure paths as hypotheses, attach a scoped evidence checkpoint, and let an accountable analyst confirm or reject the path. This board does not execute actions against systems.</p></div><span className="atlas-status">Evidence before conclusion</span></div>
+    <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_.92fr]"><div className="grid gap-2">{paths.map((path) => { const meta = stateMeta[path.state]; const Icon = meta.icon; const selectedPath = path.id === selected.id; return <button key={path.id} onClick={() => setSelectedId(path.id)} className={`rounded-lg border p-3 text-left ${selectedPath ? "border-[#e8b760]/45 bg-[#e8b760]/[.07]" : "border-white/8 bg-black/20 hover:border-white/20"}`}><div className="flex items-start justify-between gap-3"><div><p className="text-[11px] leading-5 text-white/75">{path.label}</p><p className="mt-1 text-[10px] text-white/42">{path.zone} · confidence: {path.confidence}</p></div><span className={`inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-1 text-[9px] ${meta.tone}`}><Icon size={11}/>{meta.label}</span></div></button>})}</div>
+      <div className="rounded-lg border border-white/8 bg-black/20 p-4"><div className="flex items-start gap-3"><div className={`rounded-lg border p-2 ${stateMeta[selected.state].tone}`}><SelectedIcon size={18}/></div><div><p className="text-sm font-semibold text-white/80">Selected validation record</p><p className="mt-1 text-[11px] leading-5 text-white/58">{selected.label}</p></div></div><div className="mt-4 grid gap-2"><div className="rounded border border-white/8 p-2.5"><p className="text-[9px] uppercase tracking-[.12em] text-white/35">Evidence checkpoint</p><p className="mt-1 text-[11px] text-white/64">{selected.evidence}</p></div><div className="rounded border border-white/8 p-2.5"><p className="text-[9px] uppercase tracking-[.12em] text-white/35">GIS coordination zone</p><p className="mt-1 flex items-center gap-1 text-[11px] text-[#b9c7ff]"><MapPinned size={12}/>{selected.zone}</p></div></div><div className="mt-4 grid grid-cols-2 gap-2"><button onClick={() => transition("evidence-review")} className="atlas-action justify-center text-xs"><Clock3 size={13}/> Stage evidence review</button><button onClick={() => transition("analyst-confirmed")} className="atlas-action justify-center text-xs"><CheckCircle2 size={13}/> Confirm with evidence</button><button onClick={() => transition("hypothesis")} className="rounded border border-white/12 px-2 py-2 text-xs text-white/58 hover:border-white/25">Return to hypothesis</button><button onClick={() => transition("rejected")} className="rounded border border-[#ee7664]/25 px-2 py-2 text-xs text-[#ffab9d] hover:border-[#ee7664]/45">Reject path</button></div><p className="mt-3 text-[10px] leading-4 text-white/42">A confirmation here is a demonstration of analyst workflow only. Private deployments should persist the evidence reference, reviewer identity, authorization context, and immutable audit event.</p></div></div>
+    <div className="mt-4 rounded-lg border border-white/8 bg-black/20 p-3"><div className="flex items-center gap-2"><CircleAlert size={14} className="text-[#f2cb82]"/><p className="text-xs font-semibold text-white/76">Coverage gaps by GIS coordination zone</p></div><div className="mt-3 grid gap-2 md:grid-cols-3">{coverage.map((zone) => { const percent = Math.round((zone.reviewed / zone.total) * 100); return <div key={zone.zone} className="rounded border border-white/8 p-2.5"><div className="flex justify-between gap-2 text-[10px]"><span className="text-white/62">{zone.zone}</span><span className="text-[#f2cb82]">{zone.reviewed}/{zone.total}</span></div><div className="mt-2 h-1.5 overflow-hidden rounded bg-white/8"><div className="h-full rounded bg-gradient-to-r from-[#81531d] to-[#e8b760]" style={{ width: `${percent}%` }}/></div><p className="mt-2 text-[10px] leading-4 text-white/42">Gap: {zone.gap}</p></div>})}</div></div>
+  </section>;
+}

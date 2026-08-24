@@ -84,3 +84,15 @@
 - [x] Add engagement scope approval, governed import decision, data-origin, retention, redaction profile, export manifest, and watermark persistence with auditable lifecycle events.
 - [x] Add role-aware member assignment, task review states, comments, report approval, retest sign-off, and read-only share-token workflow records.
 - [x] Add explicit protected dashboard loading, empty, and error rendering backed by a typed synthetic portfolio data source.
+- [x] Add a clear public-demo versus private-authorized deployment mode model with a visible authorization gate, data classification, and deployment-readiness checklist.
+- [x] Add a private data-onboarding control plane that describes approved organization-owned asset, cloud, identity, vulnerability, CMDB, EDR, and GIS data adapters without collecting live data in the public build.
+- [x] Add richer safe attack-surface intelligence workflows for asset criticality, ownership, business services, exposure-path hypotheses, validation queue, and evidence freshness.
+- [x] Add GIS decision-support upgrades for site/region posture, exposure-path overlays, assessment coverage gaps, work zones, and field/remote coordination using synthetic records only.
+- [x] Add private-deployment product documentation, readiness scoring, and a polished product experience that clearly distinguishes real authorized operations from the public synthetic demonstration.
+- [x] Add a campaign planner for authorized external, internal, cloud, API, mobile, wireless, physical, and red-team assessment tracks using synthetic engagements only.
+- [x] Add an asset ownership and business-service intelligence layer covering accountable teams, data classification, lifecycle, business criticality, providers, and remediation handoff.
+- [x] Add analyst-approved exposure-path validation records, evidence checkpoints, confidence transitions, and safe coverage-gap analytics tied to GIS coordination zones.
+- [x] Add a governed private data-onboarding inventory for scoped CMDB, cloud, identity, vulnerability, EDR, ticketing, and GIS adapters without live external connectivity.
+- [x] Add a client delivery portal model with report audiences, approved evidence bundles, remediation commitments, exceptions, attestations, and retest sign-off status.
+- [x] Add enterprise governance views for SSO readiness, tenancy isolation, connector review, data residency, legal hold, incident response, compliance evidence, and audit export posture.
+- [x] Improve the expanded operations workspace mobile layout so command-center panels retain readable width, horizontal tables remain usable, and the persistent navigation does not crowd the content column.

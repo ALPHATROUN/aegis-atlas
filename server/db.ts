@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { assessmentAssets, assessmentAuditEvents, assessmentComments, assessmentFindings, assessmentTasks, clientWorkspaces, engagementGovernance, engagementMembers, engagementNotifications, engagementTemplates, evidenceArtifacts, geospatialArtifacts, importDecisions, InsertUser, reportDeliveries, reportShareLinks, savedAtlasViews, taskReviewEvents, users } from "../drizzle/schema";
+import { assessmentAssets, assessmentAuditEvents, assessmentComments, assessmentFindings, assessmentTasks, clientWorkspaces, complianceEvidence, connectorReviews, deliveryAttestations, deliveryExceptions, engagementGovernance, engagementMembers, engagementNotifications, engagementTemplates, evidenceArtifacts, exposureValidations, geospatialArtifacts, importDecisions, InsertUser, reportDeliveries, reportShareLinks, savedAtlasViews, taskReviewEvents, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -311,4 +311,70 @@ export async function markEngagementNotificationRead(notificationId: number, rec
   const db = await getDb();
   if (!db) throw new Error("Database is not available for notification update persistence");
   await db.update(engagementNotifications).set({ readAt: new Date() }).where(and(eq(engagementNotifications.id, notificationId), eq(engagementNotifications.recipientUserId, recipientUserId)));
+}
+
+export async function createExposureValidation(input: typeof exposureValidations.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for exposure-validation persistence");
+  await db.insert(exposureValidations).values(input);
+}
+
+export async function updateExposureValidation(id: number, engagementId: number, input: Pick<typeof exposureValidations.$inferInsert, "validationState" | "confidence" | "reviewerUserId" | "reviewedAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for exposure-validation update persistence");
+  await db.update(exposureValidations).set(input).where(and(eq(exposureValidations.id, id), eq(exposureValidations.engagementId, engagementId)));
+}
+
+export async function listExposureValidations(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(exposureValidations).where(eq(exposureValidations.engagementId, engagementId)).orderBy(desc(exposureValidations.updatedAt));
+}
+
+export async function createDeliveryException(input: typeof deliveryExceptions.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for delivery-exception persistence");
+  await db.insert(deliveryExceptions).values(input);
+}
+
+export async function listDeliveryExceptions(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(deliveryExceptions).where(eq(deliveryExceptions.engagementId, engagementId)).orderBy(desc(deliveryExceptions.createdAt));
+}
+
+export async function createDeliveryAttestation(input: typeof deliveryAttestations.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for delivery-attestation persistence");
+  await db.insert(deliveryAttestations).values(input);
+}
+
+export async function listDeliveryAttestations(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(deliveryAttestations).where(eq(deliveryAttestations.engagementId, engagementId)).orderBy(desc(deliveryAttestations.createdAt));
+}
+
+export async function createConnectorReview(input: typeof connectorReviews.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for connector-review persistence");
+  await db.insert(connectorReviews).values(input);
+}
+
+export async function listConnectorReviews(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(connectorReviews).where(eq(connectorReviews.engagementId, engagementId)).orderBy(desc(connectorReviews.updatedAt));
+}
+
+export async function createComplianceEvidence(input: typeof complianceEvidence.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for compliance-evidence persistence");
+  await db.insert(complianceEvidence).values(input);
+}
+
+export async function listComplianceEvidence(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(complianceEvidence).where(eq(complianceEvidence.engagementId, engagementId)).orderBy(desc(complianceEvidence.updatedAt));
 }

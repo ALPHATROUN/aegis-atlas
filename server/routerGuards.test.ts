@@ -29,4 +29,11 @@ describe("protected workspace mutation guards", () => {
     expect(dbMocks.createAssessmentTask).not.toHaveBeenCalled();
     expect(dbMocks.appendAssessmentAuditEvent).not.toHaveBeenCalled();
   });
+
+  it("rejects a read-only member before staging a durable exposure-validation record", async () => {
+    dbMocks.getActiveEngagementMembership.mockResolvedValue({ workspaceRole: "read-only" });
+    const caller = appRouter.createCaller({ user: { id: 42, role: "user" } } as never);
+    await expect(caller.workspace.createExposureValidation({ engagementId: 1, title: "Blocked synthetic exposure validation", gisZone: "Northstar synthetic zone", evidenceReference: "Synthetic evidence reference" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(dbMocks.appendAssessmentAuditEvent).not.toHaveBeenCalled();
+  });
 });

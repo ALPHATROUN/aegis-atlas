@@ -118,6 +118,9 @@ export default function MissionControl() {
         </div>
       </header>
 
+      <nav className="relative z-20 flex gap-1 overflow-x-auto border-b border-white/10 bg-black/50 px-3 py-2 backdrop-blur-xl lg:hidden" aria-label="Mobile workspace navigation">
+        {navItems.map((item) => { const Icon = item.icon; return <button key={item.id} onClick={() => navigateSection(item.id)} className={`flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] ${active === item.id ? "border-[#e8b760]/40 bg-[#e8b760]/10 text-[#f2cb82]" : "border-white/8 text-white/55"}`}><Icon size={12}/>{item.label}</button>; })}
+      </nav>
       <div className="relative z-10 flex min-h-[calc(100vh-74px)]">
         <aside className="hidden w-[250px] shrink-0 flex-col border-r border-white/10 bg-black/28 px-3 py-5 lg:flex">
           <div className="mb-7 px-3"><p className="eyebrow">ENGAGEMENT</p><button className="mt-2 flex w-full items-center justify-between text-left text-sm font-medium text-white/90">Helix Meridian Assessment <ChevronDown size={14} className="text-white/40" /></button><p className="mt-1 text-xs text-white/45">ENG-2026-08 · Synthetic</p></div>
@@ -129,7 +132,7 @@ export default function MissionControl() {
             <p className="mt-2 text-[11px] leading-4 text-white/52">Synthetic inputs only. Active testing, credential actions, and real targets are prohibited in this workspace.</p>
           </div>
         </aside>
-        <main className="min-w-0 flex-1 px-4 py-5 lg:px-6">
+        <main className="min-w-0 flex-1 px-3 py-4 sm:px-4 sm:py-5 lg:px-6">
           {active === "mission" ? <MissionView selected={selected} selectedFinding={selectedFinding} onSelect={setSelected} activeLayers={activeLayers} toggleLayer={toggleLayer} timelineIndex={timelineIndex} setTimelineIndex={setTimelineIndex} savedViewCount={savedViewQuery.data?.length ?? demoSavedViews.length} onSaveView={saveCurrentView} auditLog={auditLog} workspaceAssets={workspaceAssets} recordSource={persistentRecordQuery.data?.assets.length ? "durable workspace metadata" : "synthetic demo fallback"} safetyLoading={safetyLoading} safetyError={safetyError} privateLoading={persistentRecordQuery.isLoading && Boolean(user)} privateError={persistentRecordQuery.isError && Boolean(user)} savedViewsLoading={savedViewQuery.isLoading && Boolean(user)} savedViewsError={savedViewQuery.isError && Boolean(user)} savedViewsEmpty={Boolean(user) && !savedViewQuery.isLoading && !savedViewQuery.isError && savedViewQuery.data?.length === 0} /> : null}
           {active === "atlas" ? <GeoOperationsView selected={selected} onSelect={setSelected} activeLayers={activeLayers} workspaceAssets={workspaceAssets} /> : null}
           {active === "surface" ? persistentRecordQuery.isError && Boolean(user) ? <ViewState title="Asset inventory unavailable" detail="The private workspace record feed could not be loaded. No private inventory is displayed." error /> : Boolean(user) && !persistentRecordQuery.isLoading && persistentRecordQuery.data?.assets.length === 0 ? <ViewState title="No private assets yet" detail="This authenticated workspace has no persisted asset records. Import an authorized artifact or return to the synthetic demonstration view." /> : <SurfaceView selected={selected} onSelect={setSelected} /> : null}

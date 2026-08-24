@@ -6,7 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { buildCitedAssistantDraft, calculateTransparentRiskScore, previewAuthorizedImport } from "./assessment";
-import { appendAssessmentAuditEvent, approveReportDelivery, createAssessmentComment, createAssessmentTask, createClientWorkspace, createEngagementNotification, createEngagementTemplate, createEvidenceReference, createGeospatialArtifact, createImportDecision, createReportDelivery, createReportShareLink, createSavedAtlasView, createTaskReviewEvent, getActiveEngagementMembership, getEngagementGovernance, getSavedAtlasViewsForOwner, getWorkspaceRecords, listAssessmentAuditEvents, listAssessmentComments, listAssessmentTasks, listClientWorkspaces, listEngagementMembers, listEngagementNotifications, listEngagementTemplates, listGeospatialArtifacts, listImportDecisions, listReportDeliveries, listReportShareLinks, listTaskReviewEvents, markEngagementNotificationRead, updateAssessmentTaskStatus, upsertEngagementGovernance, upsertEngagementMember } from "./db";
+import { appendAssessmentAuditEvent, approveReportDelivery, createAssessmentComment, createAssessmentTask, createClientWorkspace, createComplianceEvidence, createConnectorReview, createDeliveryAttestation, createDeliveryException, createEngagementNotification, createEngagementTemplate, createEvidenceReference, createExposureValidation, createGeospatialArtifact, createImportDecision, createReportDelivery, createReportShareLink, createSavedAtlasView, createTaskReviewEvent, getActiveEngagementMembership, getEngagementGovernance, getSavedAtlasViewsForOwner, getWorkspaceRecords, listAssessmentAuditEvents, listAssessmentComments, listAssessmentTasks, listClientWorkspaces, listComplianceEvidence, listConnectorReviews, listDeliveryAttestations, listDeliveryExceptions, listEngagementMembers, listEngagementNotifications, listEngagementTemplates, listExposureValidations, listGeospatialArtifacts, listImportDecisions, listReportDeliveries, listReportShareLinks, listTaskReviewEvents, markEngagementNotificationRead, updateAssessmentTaskStatus, updateExposureValidation, upsertEngagementGovernance, upsertEngagementMember } from "./db";
 import { storeEvidenceArtifact } from "./evidenceStorage";
 import { validateEvidenceIntake } from "./governance";
 import { buildSyntheticBusinessSnapshot } from "@shared/businessMetrics";
@@ -116,7 +116,7 @@ export const appRouter = router({
     }),
     operationsSnapshot: protectedProcedure.input(z.object({ engagementId: z.number().int().positive() })).query(async ({ ctx, input }) => {
       await requireEngagementRead(ctx.user, input.engagementId);
-      const [tasks, geospatialArtifacts, reports, governance, members, comments, taskReviews, importDecisions, shareLinks, templates, clientWorkspaces, notifications, auditEvents] = await Promise.all([
+      const [tasks, geospatialArtifacts, reports, governance, members, comments, taskReviews, importDecisions, shareLinks, templates, clientWorkspaces, notifications, auditEvents, exposureValidations, deliveryExceptions, deliveryAttestations, connectorReviews, complianceEvidence] = await Promise.all([
         listAssessmentTasks(input.engagementId),
         listGeospatialArtifacts(input.engagementId),
         listReportDeliveries(input.engagementId),
@@ -130,8 +130,13 @@ export const appRouter = router({
         listClientWorkspaces(ctx.user.id),
         listEngagementNotifications(input.engagementId, ctx.user.id),
         listAssessmentAuditEvents(input.engagementId),
+        listExposureValidations(input.engagementId),
+        listDeliveryExceptions(input.engagementId),
+        listDeliveryAttestations(input.engagementId),
+        listConnectorReviews(input.engagementId),
+        listComplianceEvidence(input.engagementId),
       ]);
-      return { tasks, geospatialArtifacts, reports, governance, members, comments, taskReviews, importDecisions, shareLinks, templates, clientWorkspaces, notifications, auditEvents };
+      return { tasks, geospatialArtifacts, reports, governance, members, comments, taskReviews, importDecisions, shareLinks, templates, clientWorkspaces, notifications, auditEvents, exposureValidations, deliveryExceptions, deliveryAttestations, connectorReviews, complianceEvidence };
     }),
     createTemplate: protectedProcedure.input(z.object({ name: z.string().min(3).max(255), description: z.string().min(8).max(2000), templateJson: z.record(z.string(), z.unknown()) })).mutation(async ({ ctx, input }) => {
       await requireEngagementManager(ctx.user, 1);
@@ -204,6 +209,42 @@ export const appRouter = router({
       await createEngagementNotification({ engagementId: input.engagementId, recipientUserId: ctx.user.id, notificationType: "delivery-share-created", message: `Read-only delivery share created for report ${input.reportDeliveryId}.` });
       await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "read-only-share-created", summary: `Read-only report share created for delivery ${input.reportDeliveryId}`, detailsJson: { reportDeliveryId: input.reportDeliveryId, expiresAt: input.expiresAt.toISOString(), synthetic: true } });
       return { created: true, token } as const;
+    }),
+    createExposureValidation: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), title: z.string().min(4).max(512), gisZone: z.string().min(3).max(255), evidenceReference: z.string().min(4).max(768) })).mutation(async ({ ctx, input }) => {
+      await requireEngagementWrite(ctx.user, input.engagementId);
+      await createExposureValidation({ ...input, confidence: "inferred", validationState: "hypothesis", createdByUserId: ctx.user.id });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "exposure-validation-created", summary: `Exposure validation staged: ${input.title}`, detailsJson: { gisZone: input.gisZone, evidenceReference: input.evidenceReference, synthetic: true } });
+      return { created: true } as const;
+    }),
+    reviewExposureValidation: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), validationId: z.number().int().positive(), validationState: z.enum(["hypothesis", "evidence-review", "analyst-confirmed", "rejected"]), confidence: z.enum(["none", "inferred", "medium", "high"]) })).mutation(async ({ ctx, input }) => {
+      await requireEngagementReview(ctx.user, input.engagementId);
+      await updateExposureValidation(input.validationId, input.engagementId, { validationState: input.validationState, confidence: input.confidence, reviewerUserId: ctx.user.id, reviewedAt: new Date() });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "exposure-validation-reviewed", summary: `Exposure validation ${input.validationId}: ${input.validationState}`, detailsJson: { confidence: input.confidence, synthetic: true } });
+      return { reviewed: true } as const;
+    }),
+    createDeliveryException: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), reportDeliveryId: z.number().int().positive().optional(), title: z.string().min(4).max(512), rationale: z.string().min(8).max(4000), expiresAt: z.date().optional() })).mutation(async ({ ctx, input }) => {
+      await requireEngagementWrite(ctx.user, input.engagementId);
+      await createDeliveryException({ ...input, exceptionStatus: "requested", requestedByUserId: ctx.user.id });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "delivery-exception-requested", summary: `Delivery exception requested: ${input.title}`, detailsJson: { reportDeliveryId: input.reportDeliveryId, synthetic: true } });
+      return { created: true } as const;
+    }),
+    createDeliveryAttestation: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), reportDeliveryId: z.number().int().positive().optional(), audience: z.enum(["executive", "technical", "risk", "client"]), attestationType: z.enum(["delivery-approval", "evidence-review", "retest-sign-off", "closure"]), notes: z.string().min(4).max(4000) })).mutation(async ({ ctx, input }) => {
+      await requireEngagementReview(ctx.user, input.engagementId);
+      await createDeliveryAttestation({ ...input, attestationState: "attested", attestedByUserId: ctx.user.id, attestedAt: new Date(), createdByUserId: ctx.user.id });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "delivery-attestation-recorded", summary: `${input.attestationType} attested for ${input.audience}`, detailsJson: { reportDeliveryId: input.reportDeliveryId, synthetic: true } });
+      return { attested: true } as const;
+    }),
+    createConnectorReview: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), adapterType: z.enum(["cmdb", "cloud-identity", "vulnerability-edr", "ticketing-grc", "gis-facilities"]), connectorOwner: z.string().min(3).max(255), dataResidency: z.string().min(3).max(255), evidenceJson: z.record(z.string(), z.unknown()) })).mutation(async ({ ctx, input }) => {
+      await requireEngagementManager(ctx.user, input.engagementId);
+      await createConnectorReview({ ...input, reviewStatus: "planned" });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "connector-review-created", summary: `Connector review staged: ${input.adapterType}`, detailsJson: { connectorOwner: input.connectorOwner, dataResidency: input.dataResidency, synthetic: true } });
+      return { created: true } as const;
+    }),
+    createComplianceEvidence: protectedProcedure.input(z.object({ engagementId: z.number().int().positive(), controlName: z.string().min(3).max(255), evidenceReference: z.string().min(4).max(768), accountableOwner: z.string().min(3).max(255) })).mutation(async ({ ctx, input }) => {
+      await requireEngagementManager(ctx.user, input.engagementId);
+      await createComplianceEvidence({ ...input, controlStatus: "in-review" });
+      await appendAssessmentAuditEvent({ engagementId: input.engagementId, actorUserId: ctx.user.id, eventType: "compliance-evidence-recorded", summary: `Compliance evidence staged: ${input.controlName}`, detailsJson: { accountableOwner: input.accountableOwner, synthetic: true } });
+      return { created: true } as const;
     }),
     createTask: protectedProcedure.input(z.object({
       engagementId: z.number().int().positive(),
