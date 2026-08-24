@@ -1,0 +1,2 @@
+{"template-id":"synthetic-edge-policy","host":"edge.helix-labs.example","matched-at":"https://edge.helix-labs.example","info":{"severity":"high","name":"Synthetic edge policy deviation"}}
+{"template-id":"synthetic-quarantine-check","host":"production.real-target.example","matched-at":"https://production.real-target.example","info":{"severity":"critical","name":"Intentional out-of-scope record"}}

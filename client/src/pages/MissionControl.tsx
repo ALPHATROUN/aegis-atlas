@@ -1,0 +1,225 @@
+import AtlasGraph from "@/components/AtlasGraph";
+import AtlasMap from "@/components/AtlasMap";
+import AnalystAssistant from "@/components/AnalystAssistant";
+import FindingWorkflow from "@/components/FindingWorkflow";
+import ImportWorkbench from "@/components/ImportWorkbench";
+import ReportStudio from "@/components/ReportStudio";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { assets, auditEvents, findings, riskScore, scope, techniqueCoverage, type Asset, type Finding } from "@/lib/atlasData";
+import { trpc } from "@/lib/trpc";
+import { Activity, AlertTriangle, Archive, ArrowRight, Bot, Boxes, ChevronDown, CircleCheck, Cloud, Compass, Database, FileCheck2, FileText, Filter, Gauge, Globe2, Hexagon, History, Inbox, Layers3, LockKeyhole, MapPinned, Network, PanelRight, Pause, Play, Radar, Search, ShieldCheck, Sparkles, Target, Upload, Waypoints, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
+type Section = "mission" | "atlas" | "surface" | "findings" | "intelligence" | "imports" | "reports";
+
+const navItems: { id: Section; label: string; icon: typeof Globe2 }[] = [
+  { id: "mission", label: "Mission Control", icon: Compass },
+  { id: "atlas", label: "Earth & Local Atlas", icon: Globe2 },
+  { id: "surface", label: "Attack Surface", icon: Radar },
+  { id: "findings", label: "Findings", icon: AlertTriangle },
+  { id: "intelligence", label: "Threat Intelligence", icon: Network },
+  { id: "imports", label: "Import Center", icon: Inbox },
+  { id: "reports", label: "Reports & Exports", icon: FileText },
+];
+
+const severityStyle = { critical: "bg-[#ee7664]/15 text-[#ff9a88] border-[#ee7664]/30", high: "bg-[#d99c4d]/15 text-[#efbd75] border-[#d99c4d]/30", medium: "bg-[#9b8b6d]/15 text-[#d7c9ad] border-[#9b8b6d]/30", low: "bg-[#7c907c]/15 text-[#b2d2ae] border-[#7c907c]/30" };
+
+const timelineSnapshots = [
+  { time: "06:00", observed: "+1", changed: "00", quarantined: "00", note: "Declared scope imported; Northstar site baseline established.", visibleAssetIds: ["site-northstar", "edge-helix"] },
+  { time: "07:15", observed: "+2", changed: "01", quarantined: "00", note: "Aurora cloud relation added; provider confidence remains inferred.", visibleAssetIds: ["site-northstar", "edge-helix", "host-203", "aurora-cloud"] },
+  { time: "08:55", observed: "+3", changed: "01", quarantined: "01", note: "Out-of-scope fixture retained in quarantine; no workspace records created.", visibleAssetIds: ["site-northstar", "edge-helix", "host-203", "aurora-cloud", "api-helix"] },
+  { time: "09:42", observed: "+4", changed: "02", quarantined: "01", note: "F-104 evidence state updated and retest scheduled by analyst.", visibleAssetIds: ["site-northstar", "edge-helix", "host-203", "aurora-cloud", "api-helix", "solstice-provider", "mariner-site"] },
+];
+
+function adaptPersistedAssets(records: Array<{ id: number; name: string; assetType: string; status: string; confidence: string; provenance: string; lastObservedAt: Date | null; geometryJson: unknown }>): Asset[] {
+  return records.map((record, index) => {
+    const geometry = record.geometryJson as { x?: number; y?: number; coordinates?: number[] } | null;
+    const coordinates = geometry?.coordinates ?? [];
+    const x = typeof geometry?.x === "number" ? geometry.x : typeof coordinates[0] === "number" ? 20 + ((coordinates[0] + 180) / 360) * 60 : 18 + (index % 5) * 14;
+    const y = typeof geometry?.y === "number" ? geometry.y : typeof coordinates[1] === "number" ? 75 - ((coordinates[1] + 90) / 180) * 45 : 25 + (index % 4) * 13;
+    const normalizedType = record.assetType === "custom" ? "service" : record.assetType;
+    const normalizedStatus = ["observed", "validated", "watch"].includes(record.status) ? record.status : "observed";
+    return { id: `db-${record.id}`, name: record.name, type: normalizedType as Asset["type"], coordinates: { x, y }, location: "Persisted private workspace record", status: normalizedStatus as Asset["status"], criticality: 5, confidence: record.confidence as Asset["confidence"], provenance: record.provenance, lastSeen: record.lastObservedAt ? new Date(record.lastObservedAt).toLocaleString() : "Not observed", summary: "Durable workspace asset loaded from the metadata store.", related: [] };
+  });
+}
+
+function adaptPersistedFindings(records: Array<{ id: number; stableId: string; assetId: number; title: string; severity: string; confidence: string; status: string; riskFactorsJson: unknown; remediation: string; owner: string | null; retestStatus: string }>): Finding[] {
+  return records.map((record) => ({ id: record.stableId || `F-${record.id}`, title: record.title, severity: record.severity === "informational" ? "low" : record.severity as Finding["severity"], assetId: `db-${record.assetId}`, evidence: "Persisted workspace evidence reference", owner: record.owner ?? "Unassigned", remediation: record.remediation, retest: record.retestStatus === "not-required" ? "pending" : record.retestStatus as Finding["retest"], confidence: record.confidence as Finding["confidence"], factors: Array.isArray(record.riskFactorsJson) ? record.riskFactorsJson.map(String) : ["Persisted risk factors"], status: record.status as Finding["status"] }));
+}
+
+export default function MissionControl() {
+  const { user } = useAuth();
+  const { data: serverSafety, isLoading: safetyLoading, isError: safetyError } = trpc.workspace.demoSafety.useQuery();
+  const savedViewQuery = trpc.workspace.listSavedViews.useQuery(undefined, { enabled: Boolean(user) });
+  const persistentRecordQuery = trpc.workspace.persistentRecords.useQuery(undefined, { enabled: Boolean(user) });
+  const saveViewMutation = trpc.workspace.saveView.useMutation();
+  const [active, setActive] = useState<Section>("mission");
+  const [selected, setSelected] = useState<Asset>(assets[1]);
+  const [activeLayers, setActiveLayers] = useState(["Assets", "Asset clusters", "Critical findings", "Provider dependencies", "Confidence radius"]);
+  const [timelineIndex, setTimelineIndex] = useState(3);
+  const [assistantOpen, setAssistantOpen] = useState(true);
+  const [assistantConfirmed, setAssistantConfirmed] = useState(false);
+  const [importSelected, setImportSelected] = useState("Nuclei JSONL");
+  const [demoSavedViews, setDemoSavedViews] = useState(() => typeof window === "undefined" ? ["Critical external surface"] : JSON.parse(window.localStorage.getItem("aegis-demo-saved-views") ?? '["Critical external surface"]') as string[]);
+  const [auditLog, setAuditLog] = useState(auditEvents);
+
+  const workspaceAssets = useMemo(() => persistentRecordQuery.data?.assets.length ? adaptPersistedAssets(persistentRecordQuery.data.assets) : assets, [persistentRecordQuery.data]);
+  const workspaceFindings = useMemo(() => persistentRecordQuery.data?.findings.length ? adaptPersistedFindings(persistentRecordQuery.data.findings) : findings, [persistentRecordQuery.data]);
+  const selectedFinding = useMemo(() => workspaceFindings.find((finding) => finding.assetId === selected.id) ?? workspaceFindings[0] ?? findings[0], [selected, workspaceFindings]);
+  useEffect(() => { if (!workspaceAssets.some((asset) => asset.id === selected.id)) setSelected(workspaceAssets[0] ?? assets[0]); }, [workspaceAssets, selected.id]);
+
+  const toggleLayer = (layer: string) => setActiveLayers((current) => current.includes(layer) ? current.filter((item) => item !== layer) : [...current, layer]);
+  const recordAudit = (action: string) => setAuditLog((current) => [{ time: "Now", action, actor: user?.name ?? "Demo Analyst", type: "workflow" }, ...current].slice(0, 4));
+  const saveCurrentView = () => {
+    const name = `Atlas view · ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    const stateJson = { activeLayers, selectedAsset: selected.id, timelineIndex, synthetic: true };
+    if (user) {
+      saveViewMutation.mutate({ engagementId: 1, name, stateJson }, { onSuccess: () => { savedViewQuery.refetch(); recordAudit(`Saved persistent workspace view: ${name}`); }, onError: () => recordAudit("Saved-view persistence unavailable; synthetic workspace state retained locally") });
+    } else {
+      const next = [name, ...demoSavedViews].slice(0, 5);
+      setDemoSavedViews(next);
+      window.localStorage.setItem("aegis-demo-saved-views", JSON.stringify(next));
+      recordAudit(`Saved local synthetic workspace view: ${name}`);
+    }
+  };
+
+  return (
+    <div className="atlas-shell min-h-screen bg-[#050504] text-[#f7f0e4]">
+      <div className="pointer-events-none fixed inset-0 atlas-vignette" />
+      <div className="pointer-events-none fixed inset-0 atlas-rays" />
+      <header className="relative z-30 flex h-[74px] items-center justify-between border-b border-white/10 bg-black/45 px-5 backdrop-blur-xl lg:px-7">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#e8b760]/35 bg-[#e8b760]/10 shadow-[0_0_30px_rgba(232,183,96,.12)]"><Hexagon size={21} className="text-[#e8b760]" /></div>
+          <div className="min-w-0">
+            <h1 className="atlas-wordmark truncate">AEGIS <span>ATLAS</span></h1>
+            <p className="hidden text-[10px] uppercase tracking-[.2em] text-white/42 sm:block">Geospatial Security Assessment Environment</p>
+          </div>
+        </div>
+          <div className="hidden items-center gap-3 lg:flex">
+          <div className="rounded-full border border-[#e8b760]/30 bg-[#e8b760]/10 px-3 py-1.5 text-[10px] font-semibold tracking-[.16em] text-[#f5cb80]">{serverSafety?.authorization ?? scope.authorization}</div>
+          <div className="flex items-center gap-2 border-l border-white/10 pl-4 text-xs text-white/55"><LockKeyhole size={14} className="text-[#e8b760]" /> Scope enforced</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="atlas-icon-button"><Search size={16} /></button>
+          <button className="atlas-icon-button"><History size={16} /></button>
+          <button className="atlas-icon-button relative"><Activity size={16} /><i className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#ee7664]" /></button>
+        </div>
+      </header>
+
+      <div className="relative z-10 flex min-h-[calc(100vh-74px)]">
+        <aside className="hidden w-[250px] shrink-0 flex-col border-r border-white/10 bg-black/28 px-3 py-5 lg:flex">
+          <div className="mb-7 px-3"><p className="eyebrow">ENGAGEMENT</p><button className="mt-2 flex w-full items-center justify-between text-left text-sm font-medium text-white/90">Helix Meridian Assessment <ChevronDown size={14} className="text-white/40" /></button><p className="mt-1 text-xs text-white/45">ENG-2026-08 · Synthetic</p></div>
+          <nav className="space-y-1">
+            {navItems.map((item) => { const Icon = item.icon; return <button key={item.id} onClick={() => setActive(item.id)} className={`atlas-nav-item ${active === item.id ? "atlas-nav-active" : ""}`}><Icon size={16} /><span>{item.label}</span>{item.id === "findings" && <b>3</b>}</button>; })}
+          </nav>
+          <div className="mt-auto rounded-xl border border-[#e8b760]/20 bg-[linear-gradient(135deg,rgba(232,183,96,.13),rgba(232,183,96,.02))] p-3.5">
+            <div className="flex items-center gap-2"><ShieldCheck size={16} className="text-[#e8b760]" /><p className="text-xs font-semibold">Safety posture intact</p></div>
+            <p className="mt-2 text-[11px] leading-4 text-white/52">Synthetic inputs only. Active testing, credential actions, and real targets are prohibited in this workspace.</p>
+          </div>
+        </aside>
+        <main className="min-w-0 flex-1 px-4 py-5 lg:px-6">
+          {active === "mission" || active === "atlas" ? <MissionView selected={selected} selectedFinding={selectedFinding} onSelect={setSelected} activeLayers={activeLayers} toggleLayer={toggleLayer} timelineIndex={timelineIndex} setTimelineIndex={setTimelineIndex} savedViewCount={savedViewQuery.data?.length ?? demoSavedViews.length} onSaveView={saveCurrentView} auditLog={auditLog} workspaceAssets={workspaceAssets} recordSource={persistentRecordQuery.data?.assets.length ? "durable workspace metadata" : "synthetic demo fallback"} safetyLoading={safetyLoading} safetyError={safetyError} privateLoading={persistentRecordQuery.isLoading && Boolean(user)} privateError={persistentRecordQuery.isError && Boolean(user)} savedViewsLoading={savedViewQuery.isLoading && Boolean(user)} savedViewsError={savedViewQuery.isError && Boolean(user)} savedViewsEmpty={Boolean(user) && !savedViewQuery.isLoading && !savedViewQuery.isError && savedViewQuery.data?.length === 0} /> : null}
+          {active === "surface" ? persistentRecordQuery.isError && Boolean(user) ? <ViewState title="Asset inventory unavailable" detail="The private workspace record feed could not be loaded. No private inventory is displayed." error /> : Boolean(user) && !persistentRecordQuery.isLoading && persistentRecordQuery.data?.assets.length === 0 ? <ViewState title="No private assets yet" detail="This authenticated workspace has no persisted asset records. Import an authorized artifact or return to the synthetic demonstration view." /> : <SurfaceView selected={selected} onSelect={setSelected} /> : null}
+          {active === "findings" ? <FindingWorkflow onSelectAsset={setSelected} onAudit={recordAudit} records={workspaceFindings} loading={persistentRecordQuery.isLoading && Boolean(user)} error={persistentRecordQuery.isError && Boolean(user)} /> : null}
+          {active === "intelligence" ? persistentRecordQuery.isError && Boolean(user) ? <ViewState title="Intelligence context unavailable" detail="Relationship context is unavailable because the private workspace feed failed to load." error /> : Boolean(user) && !persistentRecordQuery.isLoading && persistentRecordQuery.data?.assets.length === 0 ? <ViewState title="No intelligence context yet" detail="Add authorized workspace assets and relationships before generating a private intelligence view." /> : <IntelligenceView selected={selected} /> : null}
+          {active === "imports" ? <ImportWorkbench selected={importSelected} setSelected={setImportSelected} /> : null}
+          {active === "reports" ? <ReportStudio records={workspaceFindings} loading={persistentRecordQuery.isLoading && Boolean(user)} error={persistentRecordQuery.isError && Boolean(user)} /> : null}
+        </main>
+        {assistantOpen && <AnalystAssistant confirmed={assistantConfirmed} onConfirm={() => setAssistantConfirmed(true)} onClose={() => setAssistantOpen(false)} />}
+        {!assistantOpen && <button onClick={() => setAssistantOpen(true)} className="fixed bottom-5 right-5 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-[#e8b760]/40 bg-[#15110a] text-[#e8b760] shadow-[0_0_35px_rgba(232,183,96,.25)]" aria-label="Open analyst assistant"><Bot size={20} /></button>}
+      </div>
+    </div>
+  );
+}
+
+function PageLead({ eyebrow, title, description, actions }: { eyebrow: string; title: string; description: string; actions?: React.ReactNode }) {
+  return <div className="mb-5 flex flex-col justify-between gap-4 xl:flex-row xl:items-end"><div><p className="eyebrow">{eyebrow}</p><h2 className="atlas-heading mt-1">{title}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-white/52">{description}</p></div>{actions && <div className="flex items-center gap-2">{actions}</div>}</div>;
+}
+
+function MissionView({ selected, selectedFinding, onSelect, activeLayers, toggleLayer, timelineIndex, setTimelineIndex, savedViewCount, onSaveView, auditLog, workspaceAssets, recordSource, safetyLoading, safetyError, privateLoading, privateError, savedViewsLoading, savedViewsError, savedViewsEmpty }: { selected: Asset; selectedFinding: Finding; onSelect: (asset: Asset) => void; activeLayers: string[]; toggleLayer: (layer: string) => void; timelineIndex: number; setTimelineIndex: (index: number) => void; savedViewCount: number; onSaveView: () => void; auditLog: typeof auditEvents; workspaceAssets: Asset[]; recordSource: string; safetyLoading: boolean; safetyError: boolean; privateLoading: boolean; privateError: boolean; savedViewsLoading: boolean; savedViewsError: boolean; savedViewsEmpty: boolean }) {
+  const layers = ["Assets", "Asset clusters", "Critical findings", "Provider dependencies", "Confidence radius", "Cloud regions"];
+  const [isPlaying, setIsPlaying] = useState(false);
+  const snapshot = timelineSnapshots[timelineIndex];
+  const previousSnapshot = timelineSnapshots[Math.max(0, timelineIndex - 1)];
+  const visibleAssets = workspaceAssets.filter((asset) => snapshot.visibleAssetIds.includes(asset.id) || asset.id.startsWith("db-"));
+  const assetDelta = timelineIndex === 0 ? visibleAssets.length : visibleAssets.length - previousSnapshot.visibleAssetIds.length;
+  useEffect(() => {
+    if (!isPlaying) return;
+    const timer = window.setInterval(() => setTimelineIndex((timelineIndex + 1) % timelineSnapshots.length), 1800);
+    return () => window.clearInterval(timer);
+  }, [isPlaying, timelineIndex, setTimelineIndex]);
+  return <>
+    <PageLead eyebrow="MISSION CONTROL / LIVE SYNTHETIC ENVIRONMENT" title="ASSESSMENT ATLAS" description={`An evidence-first, scope-enforced command workspace for mapping fictional security relationships. Record source: ${recordSource}.`} actions={<><button onClick={onSaveView} className="atlas-action"><MapPinned size={15} /> Save view ({savedViewCount})</button><button className="atlas-action atlas-action-primary"><FileCheck2 size={15} /> Evidence snapshot</button></>} />
+    {(safetyLoading || privateLoading || savedViewsLoading) && <div className="mb-4 rounded-lg border border-[#e8b760]/20 bg-[#e8b760]/[.05] px-3 py-2 text-xs text-[#f2cb82]" aria-live="polite">Loading authorized workspace state…</div>}
+    {safetyError && <div className="mb-4 rounded-lg border border-[#ee7664]/30 bg-[#ee7664]/[.07] px-3 py-2 text-xs text-[#ffab9d]" role="alert">Authorization status could not be refreshed; the visible synthetic safety boundary remains read-only.</div>}
+    {privateError && <div className="mb-4 rounded-lg border border-[#ee7664]/30 bg-[#ee7664]/[.07] px-3 py-2 text-xs text-[#ffab9d]" role="alert">Private workspace records are unavailable. A synthetic demo fallback is displayed; no private data is exposed.</div>}
+    {savedViewsError && <div className="mb-4 rounded-lg border border-[#ee7664]/30 bg-[#ee7664]/[.07] px-3 py-2 text-xs text-[#ffab9d]" role="alert">Shared saved views could not be loaded. The current view remains available but is not synchronized.</div>}
+    {savedViewsEmpty && <div className="mb-4 rounded-lg border border-dashed border-white/15 bg-black/20 px-3 py-2 text-xs text-white/48">No shared saved views exist for this authenticated workspace. Save the current atlas state to create one.</div>}
+    {!privateLoading && !privateError && recordSource === "synthetic demo fallback" && <div className="mb-4 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/48">Private workspace store is empty or unauthenticated. Displaying safe synthetic assets and findings.</div>}
+    <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <Metric icon={Target} label="Scope coverage" value="94.2%" detail="33 / 35 declared objects" tone="gold" />
+      <Metric icon={AlertTriangle} label="Priority queue" value="03" detail="1 critical · 1 high · 1 medium" tone="red" />
+      <Metric icon={Waypoints} label="Evidence integrity" value="100%" detail="12 verified references" tone="gold" />
+      <Metric icon={Gauge} label="Data freshness" value="18m" detail="Latest synthetic observation" tone="blue" />
+    </div>
+    <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+      <aside className="atlas-surface p-4">
+        <div className="flex items-center justify-between"><p className="eyebrow">LAYER CONTROL</p><Filter size={14} className="text-white/40" /></div>
+        <div className="mt-4 space-y-2">{layers.map((layer) => <label key={layer} className="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-2 hover:bg-white/[.03]"><span className="flex items-center gap-2 text-xs text-white/70"><input checked={activeLayers.includes(layer)} onChange={() => toggleLayer(layer)} type="checkbox" className="accent-[#e8b760]" />{layer}</span><span className="text-[10px] text-white/32">{layer === "Assets" ? "27" : layer === "Critical findings" ? "01" : "on"}</span></label>)}</div>
+        <div className="my-5 border-t border-white/10" />
+        <p className="eyebrow">RISK CONCENTRATION</p>
+        <div className="mt-3 space-y-3">{[{label:"Northstar Relay",value:82},{label:"Aurora Cloud",value:63},{label:"Solstice Transit",value:44}].map((item) => <div key={item.label}><div className="mb-1.5 flex justify-between text-[11px] text-white/58"><span>{item.label}</span><b className="font-medium text-[#f0c678]">{item.value}</b></div><div className="h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full rounded-full bg-gradient-to-r from-[#8f5a27] to-[#e8b760]" style={{width:`${item.value}%`}} /></div></div>)}</div>
+        <div className="mt-6 rounded-lg border border-white/10 bg-white/[.025] p-3"><p className="text-[10px] uppercase tracking-[.16em] text-white/42">Location semantics</p><p className="mt-2 text-[11px] leading-5 text-white/55">Dashed rings indicate an inferred provider relationship, not a verified physical location.</p></div>
+      </aside>
+      <AtlasMap assets={visibleAssets} selectedId={selected.id} clustered={activeLayers.includes("Asset clusters")} onSelect={onSelect} />
+      <aside className="atlas-surface p-4">
+        <div className="flex items-start justify-between gap-3"><div><p className="eyebrow">SELECTED INTELLIGENCE</p><h3 className="mt-2 text-base font-semibold text-white">{selected.name}</h3><p className="mt-1 text-xs text-[#e8b760]">{selected.type.toUpperCase()} · {selected.location}</p></div><span className="atlas-status">{selected.status}</span></div>
+        <p className="mt-4 text-xs leading-5 text-white/60">{selected.summary}</p>
+        <div className="mt-5 grid grid-cols-2 gap-2">{[["Confidence", selected.confidence],["Criticality", `${selected.criticality}/10`],["Last observed", selected.lastSeen],["Provenance", "Verified"]].map(([label,value]) => <div key={label} className="rounded-lg border border-white/8 bg-black/20 p-2.5"><p className="text-[9px] uppercase tracking-[.14em] text-white/35">{label}</p><p className="mt-1 text-xs font-medium text-white/80">{value}</p></div>)}</div>
+        <div className="my-5 border-t border-white/10" />
+        <p className="eyebrow">RELATED OBJECTS</p><div className="mt-2 flex flex-wrap gap-1.5">{selected.related.map((item) => <button key={item} className="rounded-md border border-[#e8b760]/20 bg-[#e8b760]/[.07] px-2 py-1 text-[10px] text-[#f2cb82]">{item}</button>)}</div>
+        <div className="mt-5 rounded-lg border border-[#ee7664]/25 bg-[#ee7664]/[.07] p-3"><div className="flex items-center gap-2 text-[#ffad9d]"><AlertTriangle size={14} /><p className="text-xs font-semibold">Linked priority signal</p></div><p className="mt-2 text-[11px] leading-5 text-white/58">{selectedFinding.id} · {selectedFinding.title}</p><button className="mt-2 flex items-center gap-1 text-[11px] font-medium text-[#f2cb82]">Open evidence trail <ArrowRight size={12} /></button></div>
+      </aside>
+    </div>
+    <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_345px]">
+      <section className="atlas-surface overflow-hidden p-4"><div className="flex items-center justify-between"><div><p className="eyebrow">CHANGE OVER TIME</p><p className="mt-1 text-sm font-medium text-white">Assessment observations · filtered through {snapshot.time} UTC</p></div><div className="flex items-center gap-2"><button onClick={() => setIsPlaying(!isPlaying)} className="atlas-icon-button h-7 w-7" aria-label={isPlaying ? "Pause timeline playback" : "Play timeline playback"}>{isPlaying ? <Pause size={13}/> : <Play size={13}/>}</button><span className="text-[10px] uppercase tracking-[.16em] text-white/40">Snapshot {timelineIndex + 1} / 4</span></div></div><div className="mt-6 px-2"><div className="relative h-8"><div className="absolute left-1 top-3 h-px w-[calc(100%-8px)] bg-gradient-to-r from-white/15 via-[#e8b760]/70 to-white/15" />{timelineSnapshots.map((item,index) => <button key={item.time} onClick={() => { setIsPlaying(false); setTimelineIndex(index); }} className="absolute top-0 flex -translate-x-1/2 flex-col items-center gap-2" style={{left:`${(index / 3) * 100}%`}}><i className={`h-3 w-3 rounded-full border-2 ${timelineIndex === index ? "border-[#fff2cf] bg-[#e8b760] shadow-[0_0_16px_rgba(232,183,96,.9)]" : "border-[#9e8053] bg-[#15100a]"}`} /><span className={`text-[10px] ${timelineIndex === index ? "text-[#f0c678]" : "text-white/35"}`}>{item.time}</span></button>)}</div></div><div className="mt-7 grid gap-2 sm:grid-cols-3"><TimelineCard label="Observed" value={snapshot.observed} detail="New synthetic records"/><TimelineCard label="Changed" value={snapshot.changed} detail="Evidence and state updates"/><TimelineCard label="Quarantined" value={snapshot.quarantined} detail="Out-of-scope import record"/></div><div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]"><div className="rounded-lg border border-white/8 bg-black/20 p-3 text-xs leading-5 text-white/55"><span className="mr-2 text-[#e8b760]">Observation history:</span>{snapshot.note}</div><div className="rounded-lg border border-[#e8b760]/20 bg-[#e8b760]/[.06] p-3 text-right"><p className="text-[9px] uppercase tracking-[.14em] text-white/42">Compared to previous</p><p className="mt-1 text-sm font-semibold text-[#f2cb82]">{assetDelta >= 0 ? "+" : ""}{assetDelta} visible assets</p></div></div></section>
+      <AtlasGraph selected={selected} assets={visibleAssets} />
+    </div>
+    <section className="mt-4 atlas-surface overflow-hidden"><div className="flex items-center justify-between border-b border-white/10 px-4 py-3"><div><p className="eyebrow">AUDIT TRAIL</p><p className="mt-1 text-xs text-white/48">Key workspace actions are recorded in the synthetic engagement ledger.</p></div><button className="atlas-action text-xs"><Archive size={13} /> View ledger</button></div><div className="grid divide-y divide-white/7 md:grid-cols-4 md:divide-x md:divide-y-0">{auditLog.map((event) => <div key={`${event.time}-${event.action}`} className="p-3.5"><p className="text-[10px] text-[#e8b760]">{event.time} UTC</p><p className="mt-1 text-xs leading-5 text-white/75">{event.action}</p><p className="mt-1 text-[10px] text-white/40">{event.actor}</p></div>)}</div></section>
+  </>;
+}
+
+function Metric({ icon: Icon, label, value, detail, tone }: { icon: typeof Target; label: string; value: string; detail: string; tone: "gold" | "red" | "blue" }) { const toneClass = tone === "red" ? "text-[#ef796a]" : tone === "blue" ? "text-[#aabfff]" : "text-[#e8b760]"; return <div className="atlas-surface flex items-center gap-3 p-3.5"><div className={`flex h-9 w-9 items-center justify-center rounded-lg bg-white/[.035] ${toneClass}`}><Icon size={17} /></div><div><p className="text-[10px] uppercase tracking-[.15em] text-white/38">{label}</p><p className="mt-0.5 text-xl font-semibold text-white">{value} <span className="text-[10px] font-normal text-white/38">{detail}</span></p></div></div>; }
+function TimelineCard({ label, value, detail }: { label: string; value: string; detail: string }) { return <div className="rounded-lg border border-white/8 bg-black/20 p-3"><p className="text-[10px] uppercase tracking-[.15em] text-white/38">{label}</p><p className="mt-1 text-xl font-semibold text-[#f2cb82]">{value}</p><p className="mt-1 text-[11px] text-white/45">{detail}</p></div>; }
+
+function ViewState({ title, detail, error = false }: { title: string; detail: string; error?: boolean }) { return <section className={`atlas-surface p-8 text-center ${error ? "border-[#ee7664]/30" : "border-dashed"}`} role={error ? "alert" : undefined}><p className={`text-sm font-semibold ${error ? "text-[#ffab9d]" : "text-white/70"}`}>{title}</p><p className="mx-auto mt-2 max-w-lg text-xs leading-5 text-white/48">{detail}</p></section>; }
+
+function SurfaceView({ selected, onSelect }: { selected: Asset; onSelect: (asset: Asset) => void }) { return <><PageLead eyebrow="ATTACK SURFACE / SYNTHETIC INVENTORY" title="ASSOCIATED ASSETS" description="Domains, documentation IPs, services, locations, providers, and cloud regions are correlated with confidence and provenance. All records are fictional lab data." actions={<button className="atlas-action atlas-action-primary"><Database size={15}/> Export data</button>} /><div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_330px]"><section className="atlas-surface overflow-hidden"><table className="atlas-table"><thead><tr><th>OBJECT</th><th>TYPE</th><th>LOCATION / CONTEXT</th><th>CONFIDENCE</th><th>LAST SEEN</th><th /></tr></thead><tbody>{assets.map((asset) => <tr key={asset.id} className={selected.id === asset.id ? "bg-[#e8b760]/[.055]" : ""}><td><button onClick={() => onSelect(asset)} className="font-medium text-white hover:text-[#f2cb82]">{asset.name}</button><span className="block text-[10px] text-white/36">{asset.provenance.split(" · ")[0]}</span></td><td><span className="atlas-type">{asset.type}</span></td><td className="text-white/55">{asset.location}</td><td><span className="text-[#f0c678]">{asset.confidence}</span></td><td className="text-white/45">{asset.lastSeen}</td><td><button onClick={() => onSelect(asset)} className="atlas-icon-button h-7 w-7"><PanelRight size={14}/></button></td></tr>)}</tbody></table></section><div className="space-y-4"><section className="atlas-surface p-4"><p className="eyebrow">SCOPE BOUNDARY</p><p className="mt-2 text-sm font-semibold text-[#f2cb82]">{scope.authorization}</p><div className="mt-4 space-y-2">{scope.inScope.map((item) => <div key={item} className="flex items-center gap-2 text-xs text-white/65"><CircleCheck size={14} className="text-[#e8b760]"/>{item}</div>)}</div></section><section className="atlas-surface p-4"><p className="eyebrow">EXCLUDED BY POLICY</p><div className="mt-3 space-y-2">{scope.excluded.map((item) => <div key={item} className="flex items-center gap-2 text-xs text-white/55"><X size={13} className="text-[#ee7664]"/>{item}</div>)}</div></section></div></div></>; }
+
+function FindingsView({ onSelectAsset }: { onSelectAsset: (asset: Asset) => void }) { return <><PageLead eyebrow="FINDINGS / EVIDENCE-BACKED TRIAGE" title="PRIORITY DECISIONS" description="Risk is transparent: severity, evidence confidence, external exposure, criticality, and dependency context are independently visible and never replaced by an opaque score." actions={<button className="atlas-action atlas-action-primary"><FileCheck2 size={15}/> Retest queue</button>} /><div className="space-y-3">{findings.map((finding) => { const asset = assets.find((item) => item.id === finding.assetId)!; const score = riskScore(finding); return <article key={finding.id} className="atlas-surface grid gap-4 p-4 xl:grid-cols-[1.25fr_.7fr_.8fr_120px]"><div><div className="flex items-center gap-2"><span className={`rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[.15em] ${severityStyle[finding.severity]}`}>{finding.severity}</span><span className="text-[10px] uppercase tracking-[.16em] text-white/35">{finding.id}</span></div><h3 className="mt-3 text-sm font-semibold leading-6 text-white">{finding.title}</h3><button onClick={() => onSelectAsset(asset)} className="mt-2 flex items-center gap-1 text-xs text-[#e8b760]">{asset.name} <ArrowRight size={12}/></button></div><div><p className="eyebrow">EVIDENCE</p><p className="mt-2 text-xs leading-5 text-white/60">{finding.evidence}</p><p className="mt-2 text-[10px] uppercase tracking-[.14em] text-[#f0c678]">{finding.confidence} confidence</p></div><div><p className="eyebrow">REMEDIATION</p><p className="mt-2 text-xs leading-5 text-white/60">{finding.remediation}</p><p className="mt-2 text-[10px] text-white/38">Owner · {finding.owner}<br/>Retest · {finding.retest}</p></div><div className="border-l border-white/10 pl-4"><p className="eyebrow">RISK</p><p className="mt-2 text-3xl font-semibold text-[#f2cb82]">{score}</p><p className="mt-1 text-[10px] uppercase tracking-[.15em] text-white/38">Explainable score</p><div className="mt-3 flex flex-wrap gap-1">{finding.factors.slice(0,2).map((factor) => <span key={factor} className="rounded border border-white/10 px-1.5 py-1 text-[9px] text-white/45">{factor}</span>)}</div></div></article>; })}</div></>; }
+
+function IntelligenceView({ selected }: { selected: Asset }) { return <><PageLead eyebrow="THREAT INTELLIGENCE / STIX-COMPATIBLE GRAPH" title="CONTROLLED CONTEXT" description="Technique tags and relationship intelligence provide analyst context. They are compatibility-ready, provenance-preserving, and isolated to synthetic records." actions={<button className="atlas-action atlas-action-primary"><Archive size={15}/> STIX export preview</button>} /><div className="grid gap-4 xl:grid-cols-[.95fr_1.05fr]"><section className="atlas-surface p-4"><p className="eyebrow">MITRE ATT&CK COVERAGE</p><div className="mt-5 grid gap-2">{techniqueCoverage.map((technique) => <div key={technique.id} className="flex items-center justify-between rounded-lg border border-white/8 bg-black/20 px-3 py-3"><div><p className="text-xs font-medium text-white">{technique.label}</p><p className="mt-1 text-[10px] text-white/38">{technique.id} · Enterprise</p></div><span className="atlas-status">{technique.state}</span></div>)}</div><p className="mt-5 text-xs leading-5 text-white/48">States distinguish reviewed, planned, observed, and not-tested activity. No technique state is treated as proof of compromise.</p></section><div className="space-y-4"><AtlasGraph selected={selected} assets={assets}/><section className="atlas-surface p-4"><p className="eyebrow">STIX RELATIONSHIP PREVIEW</p><pre className="mt-3 overflow-x-auto rounded-lg border border-white/8 bg-black/35 p-3 text-[11px] leading-5 text-[#e6cb9a]">{`{
+  "type": "relationship",
+  "relationship_type": "related-to",
+  "source_ref": "infrastructure--edge-helix",
+  "target_ref": "location--northstar",
+  "confidence": 92,
+  "x_aegis_provenance": "EV-309"
+}`}</pre></section></div></div></>; }
+
+function ImportsView({ selected, setSelected }: { selected: string; setSelected: (value: string) => void }) {
+  const formats = ["GeoJSON","CSV","Generic JSON","Nmap XML","Nuclei JSONL"];
+  const preview = trpc.workspace.previewImport.useMutation();
+  const formatMap = { "GeoJSON": "geojson", "CSV": "csv", "Generic JSON": "json", "Nmap XML": "nmap-xml", "Nuclei JSONL": "nuclei-jsonl" } as const;
+  const samplePayload = "host,severity\nedge.helix-labs.example,high\nproduction.real-target.example,critical";
+  const result = preview.data;
+  return <><PageLead eyebrow="IMPORT CENTER / PREVIEW BEFORE COMMIT" title="VALIDATE & QUARANTINE" description="Imports are never silently merged. Every input is previewed, schema-checked, scope-evaluated, and either mapped into the synthetic workspace or quarantined for analyst review." actions={<button onClick={() => preview.mutate({ format: formatMap[selected as keyof typeof formatMap], payload: samplePayload })} className="atlas-action atlas-action-primary"><Upload size={15}/> {preview.isPending ? "Validating" : "Stage artifact"}</button>} /><div className="grid gap-4 xl:grid-cols-[.72fr_1.28fr]"><section className="atlas-surface p-4"><p className="eyebrow">SUPPORTED INPUTS</p><div className="mt-4 space-y-2">{formats.map((format) => <button key={format} onClick={() => setSelected(format)} className={`flex w-full items-center justify-between rounded-lg border px-3 py-3 text-left ${selected === format ? "border-[#e8b760]/45 bg-[#e8b760]/10 text-[#f2cb82]" : "border-white/8 bg-black/20 text-white/60"}`}><span className="text-xs font-medium">{format}</span><ChevronDown size={14} className="rotate-[-90deg]"/></button>)}</div><div className="mt-5 rounded-lg border border-[#e8b760]/20 bg-[#e8b760]/[.05] p-3 text-[11px] leading-5 text-white/58">Artifact bytes belong in secured object storage. This preview exposes only immutable metadata, reference key, parser status, and validation outcome.</div></section><section className="atlas-surface overflow-hidden"><div className="flex items-center justify-between border-b border-white/10 px-4 py-3"><div><p className="eyebrow">{selected.toUpperCase()} PREVIEW</p><p className="mt-1 text-xs text-white/45">synthetic-fixture-042 · {result?.totalRows ?? 12} rows parsed</p></div><span className="atlas-status">{result?.disposition ?? "staged"}</span></div><div className="grid gap-4 p-4 lg:grid-cols-2"><div><p className="eyebrow">VALIDATION SUMMARY</p><div className="mt-3 space-y-2">{[["Schema validity",`${result?.totalRows ?? 12} / ${result?.totalRows ?? 12}`,true],["Scope policy",`${result?.acceptedCount ?? 11} / ${result?.totalRows ?? 12}`,true],["Duplicate candidates","02",false],["Quarantine",String(result?.quarantinedCount ?? 1).padStart(2,"0"),false]].map(([label,value,ok]) => <div key={String(label)} className="flex items-center justify-between rounded-lg border border-white/8 bg-black/20 px-3 py-2.5"><span className="text-xs text-white/60">{label}</span><span className={`text-xs font-medium ${ok ? "text-[#bde0b5]" : "text-[#f0c678]"}`}>{value}</span></div>)}</div></div><div><p className="eyebrow">OUT-OF-SCOPE QUARANTINE</p><div className="mt-3 rounded-lg border border-[#ee7664]/25 bg-[#ee7664]/[.05] p-3"><p className="text-xs font-medium text-[#ffad9d]">record-011 / asserted host</p><p className="mt-2 text-[11px] leading-5 text-white/55">{result?.rows.find((row) => !row.inScope)?.reason ?? "Does not match the declared synthetic target policy. Retained only as a review artifact; not available to the atlas, graph, finding, or report workflow."}</p><button className="mt-3 text-[11px] font-medium text-[#f2cb82]">Open validation rationale</button></div></div></div><div className="border-t border-white/10 bg-black/20 px-4 py-3 text-xs text-white/48">Parser outcome is audit logged. Analyst approval is required before an in-scope artifact produces workspace records.</div></section></div></>;
+}
+
+function ReportsView() { const reports = [["Executive intelligence brief","Risk concentration, decision queue, scope and safety posture","Ready"],["Technical assessment","Evidence-backed findings, methodology, transparent scores","Ready"],["Geographic exposure review","Sites, regions, uncertainty and provider concentration","Ready"],["Evidence register","Object-store references, timestamps and immutable hashes","Ready"],["Retest addendum","Outcome, residual risk and closure state","Draft"]]; return <><PageLead eyebrow="REPORTS & EXPORTS / REPRODUCIBLE OUTPUT" title="DECISION-READY DELIVERABLES" description="Every export inherits the visible scope boundary, synthetic-data banner, report snapshot, redaction profile, and evidence references used to support it." actions={<button className="atlas-action atlas-action-primary"><FileText size={15}/> Generate selected</button>} /><div className="grid gap-4 xl:grid-cols-[1.35fr_.65fr]"><section className="atlas-surface overflow-hidden"><div className="divide-y divide-white/8">{reports.map(([title, description, state]) => <div key={title} className="flex items-center justify-between gap-4 px-4 py-4"><div><p className="text-sm font-semibold text-white">{title}</p><p className="mt-1 text-xs text-white/48">{description}</p></div><div className="flex items-center gap-3"><span className="atlas-status">{state}</span><button className="atlas-icon-button"><ArrowRight size={15}/></button></div></div>)}</div></section><section className="atlas-surface p-4"><p className="eyebrow">EXPORT INTEGRITY</p><div className="mt-5 space-y-4">{[["Snapshot","ENG-2026-08 / 09:42 UTC"],["Redaction profile","Synthetic demo / no real targets"],["Evidence manifest","12 references · verified"],["Interoperability","JSON · GeoJSON · STIX preview"]].map(([label,value]) => <div key={label}><p className="text-[10px] uppercase tracking-[.15em] text-white/38">{label}</p><p className="mt-1 text-xs text-[#f0c678]">{value}</p></div>)}</div><div className="mt-6 rounded-lg border border-[#e8b760]/20 bg-[#e8b760]/[.06] p-3"><p className="text-xs font-semibold text-white">Disclosure check</p><p className="mt-2 text-[11px] leading-5 text-white/52">All report templates retain authorization, scope, provenance, and safety posture language by default.</p></div></section></div></>; }
+
+function AssistantPanel({ confirmed, onConfirm, onClose }: { confirmed: boolean; onConfirm: () => void; onClose: () => void }) {
+  const assistantInput = useMemo(() => ({ findingId: "F-104", assetName: "edge.helix-labs.example", evidenceReference: "EV-309 · HTTP response and scope comparison", score: 100 }), []);
+  const { data } = trpc.workspace.citedAssistantDraft.useQuery(assistantInput);
+  return <aside className="fixed bottom-5 right-5 z-20 hidden w-[345px] overflow-hidden rounded-2xl border border-[#e8b760]/25 bg-[#0c0a07]/95 shadow-[0_28px_90px_rgba(0,0,0,.65)] backdrop-blur-xl 2xl:block"><div className="flex items-center justify-between border-b border-white/10 bg-[linear-gradient(110deg,rgba(232,183,96,.14),transparent)] px-4 py-3"><div className="flex items-center gap-2"><div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#e8b760]/15 text-[#e8b760]"><Bot size={15}/></div><div><p className="text-xs font-semibold text-white">Analyst-confirmed assistant</p><p className="text-[10px] text-white/38">Citations required · no automatic changes</p></div></div><button onClick={onClose} className="text-white/40 hover:text-white"><X size={15}/></button></div><div className="p-4"><p className="text-xs leading-5 text-white/70">{data?.draft ?? "Preparing a citation-backed synthetic evidence summary."}</p><div className="mt-3 rounded-lg border border-white/10 bg-black/25 p-3"><p className="eyebrow">SUPPORTING WORKSPACE DATA</p><div className="mt-2 space-y-1.5 text-[11px] text-[#e6cb9a]">{data?.citations.map((citation) => <p key={citation.id}>[{citation.id}] {citation.label}</p>) ?? <p>Loading workspace citations…</p>}</div></div><div className="mt-3 rounded-lg border border-[#ef796a]/25 bg-[#ef796a]/[.055] p-3"><p className="eyebrow">LIKELY DUPLICATE / REVIEW REQUIRED</p><p className="mt-2 text-[11px] leading-5 text-white/60">The synthetic Nuclei JSONL fixture contains a case-variant repeat of <span className="text-[#f2cb82]">edge.helix-labs.example</span>. [4] Import preview duplicate candidate. The assistant will not merge or suppress either record.</p></div><div className="mt-3 rounded-lg border border-[#e8b760]/20 bg-[#e8b760]/[.055] p-3"><p className="eyebrow">CONTROL BOUNDARY</p><p className="mt-2 text-[11px] leading-5 text-white/60">This output is a draft. It cannot update a finding, report, or scope boundary unless an analyst confirms it.</p></div><button onClick={onConfirm} className={`mt-4 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors ${confirmed ? "bg-[#83a77c]/20 text-[#bde0b5]" : "bg-[#e8b760] text-[#1c1306] hover:bg-[#f3cc80]"}`}>{confirmed ? <><CircleCheck size={15}/> Draft confirmed by analyst</> : <><Sparkles size={15}/> Confirm draft before use</>}</button></div></aside>;
+}

@@ -1,0 +1,43 @@
+# Project TODO
+
+- [x] Define typed synthetic assessment data for engagements, scope, sites, cloud regions, providers, domains, hosts, services, dependencies, findings, evidence, audit events, and reports.
+- [x] Build a dark high-density mission-control layout with void-black background, directional warm-gold illumination, restrained rays, lens flares, and high-contrast uppercase display typography.
+- [x] Implement persistent navigation, engagement context, authorization state, safety posture, scope controls, and audit-status indicators.
+- [x] Build an interactive synthetic Earth/local GIS map with selectable layers, markers, clusters, geographic risk concentration, uncertainty rings, map selection, zoom controls, and saved views.
+- [x] Add synchronized asset and relationship intelligence for domains, IPs, services, providers, sites, cloud regions, dependencies, provenance, and confidence.
+- [x] Build a synchronized relationship graph panel that responds to map and asset selections.
+- [x] Implement time filters, observation history, change-over-time comparison, and a timeline playback/control experience.
+- [x] Implement evidence-backed findings with severity, confidence, impact, ownership, remediation, retest state, evidence links, transparent risk factors, and an auditable status workflow.
+- [x] Add engagement scope details for in-scope and excluded targets with a visible synthetic-data and authorized-use boundary.
+- [x] Create an import center supporting simulated GeoJSON, CSV, generic JSON, Nmap XML, and Nuclei JSONL previews, schema validation, and out-of-scope quarantine.
+- [x] Add MITRE ATT&CK tags, coverage visualization, and STIX-compatible relationship/export previews using synthetic data only.
+- [x] Create professional executive, technical, geographic, evidence, and retest report/export views.
+- [x] Implement an analyst-confirmed assistant view that cites selected synthetic workspace evidence, explains risk, drafts report text, and flags likely duplicate records without automatically modifying data.
+- [x] Create secure evidence metadata and object-storage reference patterns without placing evidence bytes in the database.
+- [x] Add database schema, query helpers, tRPC procedures, and UI integrations for core workspace records where persistent storage is appropriate.
+- [x] Add unit tests for import parsing, risk scoring, scope enforcement, and analyst-assistant citation/confirmation behavior.
+- [x] Write GitHub-ready README, architecture notes, authorized-use policy, data model reference, sample data documentation, and contribution/testing guidance.
+- [x] Verify responsive desktop and mobile layouts, accessible contrast, keyboard reachability, and empty/loading/error states.
+- [x] Run type checks and automated tests, inspect runtime logs, visually verify primary screens, and resolve identified defects.
+- [x] Implement persisted saved views and visual clustering behavior in the atlas map.
+- [x] Add real timeline filtering, playback, observation-history drilldown, and change-comparison logic.
+- [x] Build auditable finding status transitions with clear confirmation and local workflow state.
+- [x] Make the import center execute format-specific previews with real validation summaries and remove hardcoded validation results.
+- [x] Implement substantive executive, technical, geographic, evidence, and retest report content with export-ready snapshots.
+- [x] Add cited duplicate-record flagging to the analyst assistant.
+- [x] Integrate persistent workspace records and saved views into core UI flows without compromising the public synthetic-demo experience.
+- [x] Add explicit loading, empty, error, and keyboard-accessible states across all primary workflows.
+- [x] Implement a true timeline comparison mode with per-snapshot drilldown that changes visible workspace data.
+- [x] Add a confirmation step and durable audit-event handoff for finding status transitions.
+- [x] Return explicit per-format schema-validation outcomes from the import preview service.
+- [x] Include duplicate-detection citations in the assistant response payload and render only returned citations.
+- [x] Add a persisted-record loader with synthetic demo fallbacks for assets and findings.
+- [x] Complete loading, empty, error, and focus-state coverage across primary screens.
+- [x] Render the assistant duplicate warning from the returned citation payload rather than hardcoded text.
+- [x] Load persisted findings with a synthetic fallback and wire them into the principal findings and report workflows.
+- [x] Add explicit loading, empty, error, and focus-state coverage for all major views and backend-driven queries.
+- [x] Add explicit loading, error, and empty UI for main mission-control safety, saved-view, and persisted-record queries.
+- [x] Add empty/error states for remaining major views and extend focus-visible treatment to all interactive controls.
+- [x] Add explicit saved-view empty and error states for the authenticated workspace query.
+- [x] Add explicit Surface and Intelligence empty states and verify focus behavior for remaining interactive elements.
+- [x] Create a final checkpoint with every completed item accurately marked before delivery.

@@ -1,0 +1,15 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Northstar Relay Campus", "type": "site", "confidence": "confirmed", "provenance": "Synthetic facilities register" },
+      "geometry": { "type": "Point", "coordinates": [-16.2, 47.1] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "edge.helix-labs.example", "type": "domain", "confidence": "confirmed", "provenance": "Synthetic authorized DNS inventory" },
+      "geometry": { "type": "Point", "coordinates": [-12.8, 44.9] }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { assessmentAssets, assessmentAuditEvents, assessmentFindings, evidenceArtifacts, InsertUser, savedAtlasViews, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,38 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export type EvidenceReferenceInput = typeof evidenceArtifacts.$inferInsert;
+export type AuditEventInput = typeof assessmentAuditEvents.$inferInsert;
+
+/** Persists only an object-storage reference and integrity metadata, never evidence bytes. */
+export async function createEvidenceReference(input: EvidenceReferenceInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for evidence metadata persistence");
+  await db.insert(evidenceArtifacts).values(input);
+}
+
+/** Appends a workspace action that should remain visible in the engagement audit trail. */
+export async function appendAssessmentAuditEvent(input: AuditEventInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for audit persistence");
+  await db.insert(assessmentAuditEvents).values(input);
+}
+
+export async function createSavedAtlasView(input: typeof savedAtlasViews.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for saved-view persistence");
+  await db.insert(savedAtlasViews).values(input);
+}
+
+export async function getSavedAtlasViewsForOwner(ownerUserId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(savedAtlasViews).where(eq(savedAtlasViews.ownerUserId, ownerUserId));
+}
+
+export async function getWorkspaceRecords() {
+  const db = await getDb();
+  if (!db) return { assets: [], findings: [] };
+  const [assets, findings] = await Promise.all([db.select().from(assessmentAssets), db.select().from(assessmentFindings)]);
+  return { assets, findings };
+}

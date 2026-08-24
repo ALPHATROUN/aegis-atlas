@@ -1,0 +1,4 @@
+host,type,scope_note
+edge.helix-labs.example,domain,in-scope synthetic domain
+203.0.113.18,host,documentation-range fixture
+production.real-target.example,host,intentionally out of scope for quarantine test
