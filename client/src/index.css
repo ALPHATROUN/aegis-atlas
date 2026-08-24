@@ -76,6 +76,15 @@
   .atlas-nav-active { background:linear-gradient(90deg,rgba(232,183,96,.16),rgba(232,183,96,.035)); color:#f5cd87; box-shadow:inset 2px 0 0 #e8b760; }
   .atlas-nav-item:focus-visible, .atlas-action:focus-visible, .atlas-icon-button:focus-visible { outline: 2px solid #f3cc80; outline-offset: 3px; }
   button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible, [tabindex]:focus-visible { outline: 2px solid #f3cc80; outline-offset: 3px; }
+  .leaflet-container { background: #080806; font-family: inherit; }
+  .leaflet-control-zoom { border: 1px solid rgba(255,255,255,.18) !important; box-shadow: 0 10px 25px rgba(0,0,0,.5) !important; }
+  .leaflet-control-zoom a { background: rgba(8,7,5,.9) !important; color: #efcf93 !important; border-bottom-color: rgba(255,255,255,.12) !important; }
+  .leaflet-control-attribution { background: rgba(8,7,5,.78) !important; color: rgba(255,255,255,.45) !important; }
+  .leaflet-control-attribution a { color: #d2ab63 !important; }
+  .atlas-leaflet-label, .atlas-leaflet-tooltip, .atlas-leaflet-cluster { border: 1px solid rgba(232,183,96,.35) !important; border-radius: 5px !important; background: rgba(8,7,5,.88) !important; color: #f4dfb3 !important; box-shadow: 0 8px 22px rgba(0,0,0,.55) !important; font: 600 10px/1.25 ui-sans-serif, system-ui, sans-serif !important; }
+  .atlas-leaflet-label { border: 0 !important; background: rgba(8,7,5,.74) !important; color: #f8edda !important; font-size: 9px !important; letter-spacing: .05em !important; padding: 2px 4px !important; }
+  .atlas-leaflet-label:before, .atlas-leaflet-tooltip:before, .atlas-leaflet-cluster:before { display: none !important; }
+  .atlas-leaflet-cluster { min-width: 18px !important; padding: 2px 5px !important; color: #1a1208 !important; background: #e8b760 !important; text-align: center !important; }
   .atlas-icon-button { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border:1px solid rgba(255,255,255,.12); border-radius:.55rem; color:rgba(255,255,255,.65); background:rgba(0,0,0,.22); transition:all .16s cubic-bezier(.23,1,.32,1); }
   .atlas-icon-button:hover { border-color:rgba(232,183,96,.45); color:#f0c678; background:rgba(232,183,96,.09); }
   .atlas-icon-button:active, .atlas-action:active { transform:scale(.97); }

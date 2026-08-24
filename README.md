@@ -9,7 +9,9 @@ Aegis Atlas turns a fictional assessment engagement into a synchronized command 
 | Area | Included capability |
 | --- | --- |
 | Mission control | High-density dark workspace, engagement state, metrics, safety posture, scope and audit indicators |
-| GIS atlas | Interactive synthetic map with selectable assets, clusters/risk context, inferred-location rings, layers, zoom controls, and timeline controls |
+| Earth & local GIS | Interactive Leaflet Earth map with real street, satellite, terrain, dark, and Earth-overview tiles; selectable synthetic pointers, dynamic clusters, geofences, risk halos, dependency lines, coordinate readout, and GeoJSON export |
+| Spatiotemporal context | Synthetic STAC-style imagery catalog, acquisition and cloud metadata, temporal comparison, analyst annotation staging, persisted review status, and source attribution |
+| Local planning | Synthetic floor-plan and access-transition overlay, privacy-aware waypoint records, offline-pack staging, and scoped local-planning metadata |
 | Security model | Synthetic domains, documentation hosts, services, sites, cloud regions, providers, dependencies, confidence, and provenance |
 | Findings | Evidence-backed severity, ownership, remediation, retest state, and transparent risk factors |
 | Relationships | Map-synchronized relationship graph with visual distinction for inferred links |
@@ -17,7 +19,9 @@ Aegis Atlas turns a fictional assessment engagement into a synchronized command 
 | Intelligence | ATT&CK-style coverage states, STIX-compatible relationship preview, citation-preserving evidence context |
 | Reports | Executive, technical, geographic, evidence-register, and retest report views with export-integrity metadata |
 | Assistant | Citation-backed, analyst-confirmed draft assistant that cannot modify records automatically |
-| Persistence design | Database metadata schema for engagements, assets, findings, audit events, saved views, and evidence references; secure object storage for evidence bytes |
+| Production operations | Protected task, governed GIS artifact, report-delivery, role-aware engagement-write, audit, delivery-governance, and business-packaging workflows |
+| Persistence design | Database metadata schema for engagements, assets, findings, audit events, saved views, team membership, tasks, governed geospatial artifacts, report deliveries, and evidence references; secure object storage for evidence bytes |
+| Evidence intake | Bounded, media-type-validated upload to object storage with SHA-256, classification, custody metadata, storage reference, and audit event; no file bytes are stored in the database |
 
 ## Safety and data boundary
 
@@ -45,7 +49,7 @@ pnpm check
 
 The project uses a React + TypeScript frontend, tRPC server, Drizzle/MySQL metadata model, and object-storage reference pattern. The application keeps evidence bytes outside the database and persists only reference metadata such as storage key, content type, hash, byte size, classification, and provenance.
 
-For implementation details, read the [Architecture Notes](docs/ARCHITECTURE.md) and [Data Model Reference](docs/DATA_MODEL.md).
+For implementation details, read the [Architecture Notes](docs/ARCHITECTURE.md), [Data Model Reference](docs/DATA_MODEL.md), [Production Readiness](docs/PRODUCTION_READINESS.md), [Deployment and Configuration Guide](docs/DEPLOYMENT_CONFIGURATION.md), [Business Model](docs/BUSINESS_MODEL.md), [Operations Runbook](docs/OPERATIONS_RUNBOOK.md), and [Product Roadmap](docs/ROADMAP.md).
 
 ## Sample artifacts
 
@@ -55,12 +59,14 @@ The [`samples/`](samples) directory contains completely synthetic fixtures for G
 
 ```text
 client/src/pages/MissionControl.tsx   Mission-control workspace and interaction states
-client/src/components/AtlasMap.tsx    Custom synthetic GIS canvas
+client/src/components/EarthMap.tsx    Interactive Earth/satellite/terrain mapping and synthetic geographic layers
 client/src/components/AtlasGraph.tsx  Relationship visualization
+client/src/components/ProductionOperations.tsx  Production operations, governed delivery, and evidence intake
 client/src/lib/atlasData.ts           Synthetic assessment dataset
 server/assessment.ts                  Scope enforcement, risk scoring, import preview, cited draft logic
 server/evidenceStorage.ts             Object-storage metadata reference pattern
-server/assessment.test.ts             Core workflow tests
+server/governance.ts                  Evidence-media and coordinate-precision policy helpers
+server/*.test.ts                      Core workflow and governance tests
 drizzle/schema.ts                     Workspace metadata schema
 docs/                                 Architecture, policy, and data reference
 samples/                              Safe synthetic import fixtures
@@ -72,7 +78,7 @@ The interface follows a **classified synthetic geospatial command atlas** visual
 
 ## Extending responsibly
 
-Useful future extensions include a local-only, authorization-gated importer workflow; OGC API Feature adapters; STIX/TAXII feed ingestion; indoor or 3D map adapters; richer report export; object-storage upload UI; and fully authenticated engagement persistence. Any extension must retain scope enforcement, synthetic/public-data separation, provenance, analyst confirmation, and auditability.
+Useful future extensions include OGC API Feature adapters; STIX/TAXII feed ingestion; an organization-managed 3D globe and building stream; organization SSO; a managed malware-scanning pipeline; customer-approved imagery credentials; report sharing with expiring access; and fully administered engagement membership. Any extension must retain scope enforcement, synthetic/public-data separation, provenance, analyst confirmation, and auditability.
 
 ## License and contributions
 

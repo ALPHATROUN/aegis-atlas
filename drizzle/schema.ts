@@ -81,6 +81,8 @@ export const evidenceArtifacts = mysqlTable("evidenceArtifacts", {
   byteSize: int("byteSize").notNull(),
   sha256: varchar("sha256", { length: 64 }).notNull(),
   classification: mysqlEnum("classification", ["synthetic", "internal", "confidential", "restricted"]).notNull().default("synthetic"),
+  retentionStatus: mysqlEnum("retentionStatus", ["active", "legal-hold", "scheduled-deletion", "expired"]).notNull().default("active"),
+  custodyJson: json("custodyJson").notNull(),
   sourceMetadataJson: json("sourceMetadataJson").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -105,7 +107,63 @@ export const savedAtlasViews = mysqlTable("savedAtlasViews", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const engagementMembers = mysqlTable("engagementMembers", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  userId: int("userId").notNull(),
+  workspaceRole: mysqlEnum("workspaceRole", ["manager", "analyst", "reviewer", "read-only"]).notNull().default("analyst"),
+  membershipStatus: mysqlEnum("membershipStatus", ["invited", "active", "suspended"]).notNull().default("invited"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const assessmentTasks = mysqlTable("assessmentTasks", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  findingId: int("findingId"),
+  title: varchar("title", { length: 512 }).notNull(),
+  taskStatus: mysqlEnum("taskStatus", ["open", "in-progress", "blocked", "done"]).notNull().default("open"),
+  priority: mysqlEnum("priority", ["critical", "high", "medium", "low"]).notNull().default("medium"),
+  assignedUserId: int("assignedUserId"),
+  dueAt: timestamp("dueAt"),
+  createdByUserId: int("createdByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const geospatialArtifacts = mysqlTable("geospatialArtifacts", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  title: varchar("title", { length: 512 }).notNull(),
+  artifactType: mysqlEnum("artifactType", ["geojson", "kml", "gpx", "stac-item", "imagery-annotation", "floor-plan", "offline-pack", "aoi"]).notNull(),
+  reviewStatus: mysqlEnum("reviewStatus", ["draft", "approved", "quarantined", "archived"]).notNull().default("draft"),
+  coordinatePrecision: mysqlEnum("coordinatePrecision", ["exact", "rounded", "inferred", "synthetic"]).notNull().default("synthetic"),
+  sourceReference: varchar("sourceReference", { length: 768 }),
+  metadataJson: json("metadataJson").notNull(),
+  geometryJson: json("geometryJson"),
+  createdByUserId: int("createdByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const reportDeliveries = mysqlTable("reportDeliveries", {
+  id: int("id").autoincrement().primaryKey(),
+  engagementId: int("engagementId").notNull(),
+  reportType: mysqlEnum("reportType", ["executive", "technical", "geographic", "evidence", "retest"]).notNull(),
+  deliveryStatus: mysqlEnum("deliveryStatus", ["draft", "review", "approved", "shared", "superseded"]).notNull().default("draft"),
+  redactionProfile: mysqlEnum("redactionProfile", ["synthetic-demo", "internal", "client", "restricted"]).notNull().default("synthetic-demo"),
+  storageKey: varchar("storageKey", { length: 512 }),
+  createdByUserId: int("createdByUserId").notNull(),
+  approvedByUserId: int("approvedByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export type Engagement = typeof engagements.$inferSelect;
 export type AssessmentAsset = typeof assessmentAssets.$inferSelect;
 export type AssessmentFinding = typeof assessmentFindings.$inferSelect;
 export type EvidenceArtifact = typeof evidenceArtifacts.$inferSelect;
+export type EngagementMember = typeof engagementMembers.$inferSelect;
+export type AssessmentTask = typeof assessmentTasks.$inferSelect;
+export type GeospatialArtifact = typeof geospatialArtifacts.$inferSelect;
+export type ReportDelivery = typeof reportDeliveries.$inferSelect;

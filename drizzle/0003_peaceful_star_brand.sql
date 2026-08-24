@@ -1,0 +1,2 @@
+ALTER TABLE `evidenceArtifacts` ADD `retentionStatus` enum('active','legal-hold','scheduled-deletion','expired') DEFAULT 'active' NOT NULL;--> statement-breakpoint
+ALTER TABLE `evidenceArtifacts` ADD `custodyJson` json NOT NULL;

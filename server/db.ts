@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { assessmentAssets, assessmentAuditEvents, assessmentFindings, evidenceArtifacts, InsertUser, savedAtlasViews, users } from "../drizzle/schema";
+import { assessmentAssets, assessmentAuditEvents, assessmentFindings, assessmentTasks, engagementMembers, evidenceArtifacts, geospatialArtifacts, InsertUser, reportDeliveries, savedAtlasViews, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -123,4 +123,47 @@ export async function getWorkspaceRecords() {
   if (!db) return { assets: [], findings: [] };
   const [assets, findings] = await Promise.all([db.select().from(assessmentAssets), db.select().from(assessmentFindings)]);
   return { assets, findings };
+}
+
+export async function createAssessmentTask(input: typeof assessmentTasks.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for task persistence");
+  await db.insert(assessmentTasks).values(input);
+}
+
+export async function listAssessmentTasks(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(assessmentTasks).where(eq(assessmentTasks.engagementId, engagementId));
+}
+
+export async function createGeospatialArtifact(input: typeof geospatialArtifacts.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for geospatial artifact persistence");
+  await db.insert(geospatialArtifacts).values(input);
+}
+
+export async function listGeospatialArtifacts(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(geospatialArtifacts).where(eq(geospatialArtifacts.engagementId, engagementId));
+}
+
+export async function createReportDelivery(input: typeof reportDeliveries.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available for report-delivery persistence");
+  await db.insert(reportDeliveries).values(input);
+}
+
+export async function listReportDeliveries(engagementId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(reportDeliveries).where(eq(reportDeliveries.engagementId, engagementId));
+}
+
+export async function getActiveEngagementMembership(engagementId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(engagementMembers).where(and(eq(engagementMembers.engagementId, engagementId), eq(engagementMembers.userId, userId), eq(engagementMembers.membershipStatus, "active"))).limit(1);
+  return rows[0];
 }

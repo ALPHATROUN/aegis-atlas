@@ -6,6 +6,7 @@ export type Asset = {
   name: string;
   type: "domain" | "host" | "service" | "site" | "cloud" | "provider";
   coordinates: { x: number; y: number };
+  geo: { longitude: number; latitude: number; precision: "exact-synthetic" | "approximate-synthetic" | "inferred" };
   location: string;
   status: "observed" | "validated" | "watch";
   criticality: number;
@@ -36,6 +37,7 @@ export const assets: Asset[] = [
     name: "Northstar Relay Campus",
     type: "site",
     coordinates: { x: 23, y: 32 },
+    geo: { longitude: -23.4, latitude: 64.2, precision: "exact-synthetic" },
     location: "Fictional North Atlantic Zone",
     status: "validated",
     criticality: 9,
@@ -50,6 +52,7 @@ export const assets: Asset[] = [
     name: "edge.helix-labs.example",
     type: "domain",
     coordinates: { x: 27, y: 39 },
+    geo: { longitude: -23.1, latitude: 64.1, precision: "exact-synthetic" },
     location: "Northstar Relay Campus",
     status: "validated",
     criticality: 9,
@@ -64,6 +67,7 @@ export const assets: Asset[] = [
     name: "203.0.113.18",
     type: "host",
     coordinates: { x: 31, y: 43 },
+    geo: { longitude: -22.6, latitude: 63.9, precision: "approximate-synthetic" },
     location: "Synthetic provider edge · Northstar",
     status: "observed",
     criticality: 8,
@@ -78,6 +82,7 @@ export const assets: Asset[] = [
     name: "Aurora Compute Region",
     type: "cloud",
     coordinates: { x: 64, y: 35 },
+    geo: { longitude: 48.2, latitude: 25.2, precision: "exact-synthetic" },
     location: "Fictional Eastern Cloud Region",
     status: "validated",
     criticality: 8,
@@ -92,6 +97,7 @@ export const assets: Asset[] = [
     name: "api.helix-labs.example",
     type: "service",
     coordinates: { x: 68, y: 42 },
+    geo: { longitude: 48.6, latitude: 25.0, precision: "approximate-synthetic" },
     location: "Aurora Compute Region",
     status: "watch",
     criticality: 7,
@@ -106,6 +112,7 @@ export const assets: Asset[] = [
     name: "Solstice Transit",
     type: "provider",
     coordinates: { x: 47, y: 53 },
+    geo: { longitude: 11.5, latitude: 18.0, precision: "inferred" },
     location: "Fictional interregional carrier",
     status: "validated",
     criticality: 6,
@@ -120,6 +127,7 @@ export const assets: Asset[] = [
     name: "Mariner Research Annex",
     type: "site",
     coordinates: { x: 57, y: 68 },
+    geo: { longitude: 80.5, latitude: -23.7, precision: "exact-synthetic" },
     location: "Fictional Southern Research Zone",
     status: "validated",
     criticality: 5,
