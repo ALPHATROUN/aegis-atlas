@@ -25,6 +25,13 @@ describe("production governance helpers", () => {
     expect(manifest.redactionProfile).toBe("synthetic-demo");
     expect(manifest.safeguards).toContain("No real targets");
   });
+
+  it("marks an evidence snapshot export as a synthetic, redaction-governed audited output", () => {
+    const manifest = buildSyntheticExportManifest({ artifactType: "audit-snapshot", selectedAssetId: "edge-helix", coordinatePrecision: "exact-synthetic", scene: "09:42" });
+    expect(manifest.artifactType).toBe("audit-snapshot");
+    expect(manifest.redactionProfile).toBe("synthetic-demo");
+    expect(manifest.safeguards).toContain("No active collection");
+  });
 });
 
 describe("typed synthetic business dashboard data", () => {

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 type WorkspaceSection = "mission" | "atlas" | "surface" | "findings" | "intelligence" | "imports" | "reports" | "operations";
 
-export function WorkspaceExperienceControls({ active, onNavigate, onDensityChange }: { active: WorkspaceSection; onNavigate: (section: WorkspaceSection) => void; onDensityChange: (density: "comfortable" | "compact") => void }) {
+export function WorkspaceExperienceControls({ active, onNavigate, onDensityChange, commandPaletteRequest = 0 }: { active: WorkspaceSection; onNavigate: (section: WorkspaceSection) => void; onDensityChange: (density: "comfortable" | "compact") => void; commandPaletteRequest?: number }) {
   const [showGuide, setShowGuide] = useState(() => typeof window !== "undefined" && window.localStorage.getItem("aegis-orientation-dismissed") !== "true");
   const [palette, setPalette] = useState(false);
   const [density, setDensity] = useState<"comfortable" | "compact">("comfortable");
@@ -15,6 +15,9 @@ export function WorkspaceExperienceControls({ active, onNavigate, onDensityChang
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+  useEffect(() => {
+    if (commandPaletteRequest > 0) setPalette(true);
+  }, [commandPaletteRequest]);
   const dismiss = () => { setShowGuide(false); window.localStorage.setItem("aegis-orientation-dismissed", "true"); };
   const changeDensity = (next: "comfortable" | "compact") => { setDensity(next); onDensityChange(next); };
   const commands: Array<[WorkspaceSection, string, string]> = [["mission", "Mission Control", "G M"], ["atlas", "Earth & Local Atlas", "G A"], ["surface", "Attack Surface", "G S"], ["findings", "Findings", "G F"], ["operations", "Engagement Operations", "G O"]];

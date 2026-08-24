@@ -128,3 +128,5 @@
 - [x] Add public-safe engineering and reliability artifacts for SLO/error-budget model, monitoring dashboard design, incident timeline, runbook catalog, restore-drill worksheet, performance budget ledger, SBOM/dependency-review checklist, and release risk register.
 - [x] Add public-safe accessibility, localization, and UX artifacts for translation catalog, RTL checklist, accessibility audit checklist, usability test script, contextual glossary, onboarding tour, and role-based empty-state guidance.
 - [x] Add public-safe commercial readiness artifacts for packaging matrix, entitlement model, procurement/security questionnaire response library, privacy notice checklist, support escalation model, and customer success health score.
+- [ ] Produce and verify a comprehensive professional PDF manual covering Aegis Atlas architecture, GIS, security-assessment workflows, governance, operations, deployment readiness, testing, product model, and authorized-use boundary.
+- [x] Audit every interactive control; implement real safe local behavior or clear prerequisite-disabled states; remove misleading placeholder actions; and verify desktop/mobile interaction results.
