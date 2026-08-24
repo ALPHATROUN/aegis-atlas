@@ -7,6 +7,7 @@ import { createReport } from "../client/src/components/ReportStudio";
 import { findings } from "../client/src/lib/atlasData";
 import { previewAuthorizedImport } from "./assessment";
 import { filterSyntheticMapAssets, isWithinDeclaredSyntheticScope } from "../client/src/lib/spatialControls";
+import { buildSyntheticStixPreview } from "../client/src/lib/syntheticStix";
 
 describe("production governance helpers", () => {
   it("separates read, write, review, and manager permissions", () => {
@@ -31,6 +32,15 @@ describe("production governance helpers", () => {
     expect(manifest.artifactType).toBe("audit-snapshot");
     expect(manifest.redactionProfile).toBe("synthetic-demo");
     expect(manifest.safeguards).toContain("No active collection");
+  });
+
+  it("builds a downloadable STIX preview that remains synthetic and carries export safeguards", () => {
+    const bundle = buildSyntheticStixPreview({ id: "edge-helix", name: "edge.helix-labs.example", type: "domain", coordinates: { x: 50, y: 50 }, geo: { latitude: 64.1, longitude: -23.1, precision: "synthetic" }, location: "Northstar Relay Campus", status: "validated", criticality: 9, confidence: "confirmed", provenance: "EV-309", lastSeen: "18 min ago", summary: "Synthetic domain", related: [] });
+    expect(bundle.type).toBe("bundle");
+    expect(bundle.spec_version).toBe("2.1");
+    expect(bundle.objects).toHaveLength(3);
+    expect(bundle.objects.every((item) => item.x_aegis_synthetic)).toBe(true);
+    expect(bundle.x_aegis_export_manifest.safeguards).toContain("No real targets");
   });
 });
 

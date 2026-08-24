@@ -130,3 +130,5 @@
 - [x] Add public-safe commercial readiness artifacts for packaging matrix, entitlement model, procurement/security questionnaire response library, privacy notice checklist, support escalation model, and customer success health score.
 - [ ] Produce and verify a comprehensive professional PDF manual covering Aegis Atlas architecture, GIS, security-assessment workflows, governance, operations, deployment readiness, testing, product model, and authorized-use boundary.
 - [x] Audit every interactive control; implement real safe local behavior or clear prerequisite-disabled states; remove misleading placeholder actions; and verify desktop/mobile interaction results.
+- [x] Repair the rendered Threat Intelligence STIX export preview control so it produces a clearly labeled synthetic STIX-compatible JSON download with regression coverage.
+- [x] Complete a release-blocking rendered-control audit: eliminate every presentation-only button by implementing safe behavior, governed persistence, explicit disabled prerequisites, or removal; then verify desktop and mobile flows.
