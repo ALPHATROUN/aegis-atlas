@@ -10,8 +10,8 @@
 - [x] Browser-verify a primary control on every Olympus workspace—Atlas, Findings, Intelligence, Imports, Reports, Operations, and Readiness—and record each visible bounded outcome.
 - [x] Add targeted automated coverage for command-palette destinations and bounded route-primary control contracts beyond the report workspace.
 - [x] Add automated command-palette destination coverage for every Olympus chamber and a targeted bounded-control contract outside the report workspace before release.
-- [ ] Verify responsive route navigation, map interactions, accessibility, visual differentiation, tests, production build, and GitHub synchronization under Salah ELsherif’s identity.
-- [ ] Commit and push the final Olympus accessibility, mobile-navigation, test, and release-review changes under Salah ELsherif’s identity; then verify the remote SHA and clean status.
+- [x] Verify responsive route navigation, map interactions, accessibility, visual differentiation, tests, production build, and GitHub synchronization under Salah ELsherif’s identity.
+- [x] Commit and push the final Olympus accessibility, mobile-navigation, test, and release-review changes under Salah ELsherif’s identity; then verify the remote SHA and clean status.
 - [x] Browser-verify mobile route navigation across Olympus workspaces and record visible bounded outcomes in release-review documentation.
 - [x] Perform and document a final Olympus accessibility verification covering keyboard navigation, focus visibility, command-palette access, status announcements, and readable contrast on representative routed screens.
 - [x] Verify live keyboard focus handoff into the Olympus command palette before final release synchronization.

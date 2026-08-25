@@ -15,7 +15,7 @@ The Olympus routed-workspace release was validated on 25 August 2026. Atlas rema
 | Mobile routing | At 375 × 812, Chromium verified eight labelled, visible mobile destinations and clicked from Acropolis to Helios (`/atlas`) and Athena (`/findings`) | Both route changes rendered their expected headings and visible bounded controls (`Export GeoJSON` and `Retest queue`) |
 | Mobile rendering | 375 × 812 captures of `/`, `/atlas`, `/surface`, `/findings`, `/intelligence`, `/imports`, `/reports`, and `/operations`; separate full-page captures of `/atlas` and `/readiness` | Every Olympus chamber rendered a distinct mobile environment, a visible bounded primary control, and persistent horizontally scrollable navigation; the activation boundary remained readable |
 | Keyboard and focus access | Live Chromium probe plus rendered-control regression covers `⌘/Ctrl+K`, `?`, Escape close behavior, focus handoff to the labelled close control, labelled palette destinations, modal semantics, active-route state, and explicit mobile-navigation labels | Passed |
-| GitHub synchronization | The preceding release checkpoint advanced `github/main` from `34891f4` to `35a6c8d`; final accessibility evidence is awaiting its own attributed synchronization | Salah ELsherif attribution retained |
+| GitHub synchronization | Final accessibility checkpoint pushed to `github/main` as `9751c3a39d2381fcf114a7846b0676194b110905`; local and remote SHA matched with a clean worktree | Verified under Salah ELsherif |
 
 ## Safety and activation boundary
 
@@ -31,4 +31,4 @@ On the representative routed Reports screen, the live probe activated the labell
 
 ## Commit attribution
 
-The preceding release commit `35a6c8d74662dcd70aba780f6dc5bba0b2d9a9ae` was verified with the author identity `Salah ELsherif <125509226+ALPHATROUN@users.noreply.github.com>` before synchronization to the separate public repository at https://github.com/ALPHATROUN/aegis-atlas. The final validation commit will retain that identity.
+The preceding Olympus release commit `35a6c8d74662dcd70aba780f6dc5bba0b2d9a9ae` and final accessibility-validation commit `9751c3a39d2381fcf114a7846b0676194b110905` were both verified with the author identity `Salah ELsherif <125509226+ALPHATROUN@users.noreply.github.com>` before synchronization to the separate public repository at https://github.com/ALPHATROUN/aegis-atlas.
