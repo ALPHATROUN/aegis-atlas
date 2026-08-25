@@ -62,7 +62,8 @@
 }
 
 @layer components {
-  .atlas-shell { background-image: radial-gradient(circle at 88% 0%, rgba(232,183,96,.09), transparent 24%), radial-gradient(circle at 24% 30%, rgba(133,76,32,.06), transparent 21%); }
+  .atlas-shell { position:relative; isolation:isolate; background-image: radial-gradient(circle at 88% 0%, rgba(232,183,96,.09), transparent 24%), radial-gradient(circle at 24% 30%, rgba(133,76,32,.06), transparent 21%); }
+  .atlas-shell::before { position:absolute; z-index:-1; inset:0; content:""; pointer-events:none; background:linear-gradient(180deg,rgba(5,5,4,.48),rgba(5,5,4,.88)),url("/manus-storage/aegis-atlas-cartographic-horizon_5e377807.png") center top/cover fixed; opacity:.34; mix-blend-mode:screen; }
   .atlas-vignette { background: radial-gradient(ellipse at center, transparent 28%, rgba(0,0,0,.45) 100%); z-index: 1; }
   .atlas-rays { z-index: 2; opacity: .34; background: linear-gradient(108deg, transparent 0 60%, rgba(255,236,191,.04) 60.5%, transparent 61.2%), linear-gradient(112deg, transparent 0 69%, rgba(232,183,96,.035) 69.5%, transparent 70.1%); }
   .atlas-wordmark { font-family: "Barlow Condensed", sans-serif; font-size: 1.4rem; line-height: 1; letter-spacing: .16em; font-weight: 800; background: linear-gradient(92deg,#777 0%,#f5f1e8 40%,#fff 58%,#97815e 100%); -webkit-background-clip: text; color: transparent; }

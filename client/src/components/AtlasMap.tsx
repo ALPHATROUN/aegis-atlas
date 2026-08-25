@@ -1,5 +1,5 @@
 import { Asset } from "@/lib/atlasData";
-import { Minus, Plus, LocateFixed, Layers3 } from "lucide-react";
+import { Minus, Plus, LocateFixed, Layers3, Crosshair } from "lucide-react";
 import { useState } from "react";
 
 type AtlasMapProps = {
@@ -21,6 +21,8 @@ const colors = {
 export default function AtlasMap({ assets, selectedId, clustered, onSelect }: AtlasMapProps) {
   const [zoom, setZoom] = useState(1);
   const [terrain, setTerrain] = useState(true);
+  const [focusSelection, setFocusSelection] = useState(false);
+  const selectedAsset = assets.find((asset) => asset.id === selectedId);
 
   return (
     <section className="relative min-h-[510px] overflow-hidden rounded-2xl border border-white/10 bg-[#090806] shadow-[0_40px_120px_rgba(0,0,0,.6)]" aria-label="Synthetic engagement atlas">
@@ -33,9 +35,10 @@ export default function AtlasMap({ assets, selectedId, clustered, onSelect }: At
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setTerrain(!terrain)} className="atlas-icon-button" aria-label="Toggle terrain overlay"><Layers3 size={15} /></button>
+          <button onClick={() => { setFocusSelection(true); setZoom(1.2); }} className={`atlas-icon-button ${focusSelection ? "border-[#e8b760]/45 text-[#f0c678]" : ""}`} aria-label="Focus selected synthetic asset" title={selectedAsset ? `Focus ${selectedAsset.name}` : "Focus selected synthetic asset"}><Crosshair size={15} /></button>
           <button onClick={() => setZoom(Math.max(.75, zoom - .1))} className="atlas-icon-button" aria-label="Zoom out"><Minus size={15} /></button>
           <button onClick={() => setZoom(Math.min(1.35, zoom + .1))} className="atlas-icon-button" aria-label="Zoom in"><Plus size={15} /></button>
-          <button onClick={() => setZoom(1)} className="atlas-icon-button" aria-label="Reset map view"><LocateFixed size={15} /></button>
+          <button onClick={() => { setZoom(1); setFocusSelection(false); }} className="atlas-icon-button" aria-label="Reset map view"><LocateFixed size={15} /></button>
         </div>
       </div>
 
@@ -61,6 +64,7 @@ export default function AtlasMap({ assets, selectedId, clustered, onSelect }: At
             const { x, y } = asset.coordinates;
             return <g key={asset.id} className="cursor-pointer" onClick={() => onSelect(asset)} tabIndex={0} role="button" aria-label={`Select ${asset.name}`} onKeyDown={(event) => event.key === "Enter" && onSelect(asset)}>
               {asset.confidence === "inferred" && <circle cx={x} cy={y} r="4.5" fill="none" stroke={colors[asset.type]} strokeWidth=".35" strokeDasharray=".9 .9" opacity=".65" />}
+              {selected && focusSelection && <circle cx={x} cy={y} r="6.1" fill="none" stroke="#e8b760" strokeWidth=".25" strokeDasharray=".8 .8" opacity=".85" />}
               {selected && <circle cx={x} cy={y} r="3.6" fill="none" stroke="#f8f3e8" strokeWidth=".6" opacity=".9" />}
               <circle cx={x} cy={y} r={selected ? 1.75 : 1.2} fill={colors[asset.type]} filter="url(#glow)" />
               <text x={x + 2} y={y - 1.7} className="fill-[#f5ead4] text-[2.1px] font-semibold tracking-[.18em]">{asset.name.split(".")[0].toUpperCase().slice(0, 16)}</text>
@@ -73,7 +77,7 @@ export default function AtlasMap({ assets, selectedId, clustered, onSelect }: At
         <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#ef796a]" /> finding exposure</span>
         <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#9db4ff]" /> cloud region</span>
       </div>
-      <div className="absolute bottom-4 right-5 text-right text-[10px] uppercase tracking-[.16em] text-white/35">Synthetic coordinate canvas<br />No real targets displayed</div>
+      <div className="absolute bottom-4 right-5 text-right text-[10px] uppercase tracking-[.16em] text-white/35">{focusSelection && selectedAsset ? `Focused / ${selectedAsset.name}` : "Synthetic coordinate canvas"}<br />No real targets displayed</div>
     </section>
   );
 }

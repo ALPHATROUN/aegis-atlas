@@ -1,5 +1,10 @@
 # Project TODO
 
+- [x] Improve Aegis Atlas with carefully scoped visual and interaction enhancements that preserve its established GIS-first workflows and remain separate from Anubis Guard.
+- [x] Add a functional GIS workflow interaction enhancement that improves orientation or analysis usability without changing Aegis Atlas product scope.
+- [x] Validate the improved Aegis Atlas workspace visually in the browser to confirm atmosphere, contrast, map usability, and controls remain readable.
+- [ ] Commit and synchronize every verified Aegis Atlas modification under Salah ELsherif’s configured GitHub identity.
+
 - [x] Define typed synthetic assessment data for engagements, scope, sites, cloud regions, providers, domains, hosts, services, dependencies, findings, evidence, audit events, and reports.
 - [x] Build a dark high-density mission-control layout with void-black background, directional warm-gold illumination, restrained rays, lens flares, and high-contrast uppercase display typography.
 - [x] Implement persistent navigation, engagement context, authorization state, safety posture, scope controls, and audit-status indicators.
