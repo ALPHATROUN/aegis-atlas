@@ -146,7 +146,7 @@ export default function MissionControl() {
       {headerMessage && <div role="status" className="relative z-20 mx-3 mt-3 rounded-lg border border-[#e8b760]/25 bg-[#e8b760]/[.07] px-3 py-2 text-xs text-[#f2cb82] lg:mx-6">{headerMessage}</div>}
 
       <nav className="relative z-20 flex gap-1 overflow-x-auto border-b border-white/10 bg-black/50 px-3 py-2 backdrop-blur-xl lg:hidden" aria-label="Mobile workspace navigation">
-        {navItems.map((item) => { const Icon = item.icon; return <button key={item.id} onClick={() => navigateSection(item.id)} className={`flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] ${active === item.id ? "border-[#e8b760]/40 bg-[#e8b760]/10 text-[#f2cb82]" : "border-white/8 text-white/55"}`}><Icon size={12}/>{item.label}</button>; })}
+        {navItems.map((item) => { const Icon = item.icon; return <button key={item.id} onClick={() => navigateSection(item.id)} aria-label={`Navigate to ${item.label}`} aria-current={active === item.id ? "page" : undefined} className={`flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] ${active === item.id ? "border-[#e8b760]/40 bg-[#e8b760]/10 text-[#f2cb82]" : "border-white/8 text-white/55"}`}><Icon size={12}/>{item.label}</button>; })}
       </nav>
       <div className="relative z-10 flex min-h-[calc(100vh-74px)]">
         <aside className="hidden w-[250px] shrink-0 flex-col border-r border-white/10 bg-black/28 px-3 py-5 lg:flex">

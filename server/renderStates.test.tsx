@@ -3,9 +3,9 @@ import React from "react";
 import { describe, expect, it } from "vitest";
 import { BusinessDashboardStatus } from "../client/src/components/BusinessDashboardStatus";
 import { MapFilterStatus } from "../client/src/components/MapFilterStatus";
-import { atlasActivationRoute, atlasWorkspacePaths, atlasWorkspaceRoutes } from "../client/src/lib/atlasRoutes";
+import { atlasActivationRoute, atlasMobileNavigation, atlasWorkspacePaths, atlasWorkspaceRoutes } from "../client/src/lib/atlasRoutes";
 import ReportStudio from "../client/src/components/ReportStudio";
-import { olympusCommandDestinations } from "../client/src/components/WorkspaceExperienceControls";
+import { isCommandPaletteOpenShortcut, olympusCommandDestinations, WorkspaceExperienceControls } from "../client/src/components/WorkspaceExperienceControls";
 
 describe("rendered protected dashboard states", () => {
   it.each([
@@ -40,6 +40,10 @@ describe("Olympus Atlas route contracts", () => {
     expect(atlasWorkspacePaths).toMatchObject({ mission: "/", atlas: "/atlas", surface: "/surface", findings: "/findings", intelligence: "/intelligence", imports: "/imports", reports: "/reports", operations: "/operations" });
   });
 
+  it("keeps the horizontally scrollable mobile navigation aligned to every deep-linked workspace", () => {
+    expect(atlasMobileNavigation).toEqual(Object.entries(atlasWorkspacePaths).map(([section, path]) => ({ section, path })));
+  });
+
   it("registers the separate local-only Olympus activation workbench", () => {
     expect(atlasActivationRoute).toBe("/readiness");
     expect(atlasWorkspaceRoutes).not.toContain(atlasActivationRoute);
@@ -68,5 +72,19 @@ describe("Olympus command and bounded-control contracts", () => {
     expect(result.acceptedCount).toBe(1);
     expect(result.quarantinedCount).toBe(1);
     expect(result.rows[1]?.reason).toContain("excluded");
+  });
+
+  it("exposes keyboard-discoverable command-palette routing with labelled bounded destinations", () => {
+    expect(isCommandPaletteOpenShortcut({ key: "k", metaKey: true, ctrlKey: false })).toBe(true);
+    expect(isCommandPaletteOpenShortcut({ key: "k", metaKey: false, ctrlKey: true })).toBe(true);
+    expect(isCommandPaletteOpenShortcut({ key: "?", metaKey: false, ctrlKey: false })).toBe(true);
+    expect(isCommandPaletteOpenShortcut({ key: "k", metaKey: false, ctrlKey: false })).toBe(false);
+    const markup = renderToStaticMarkup(<WorkspaceExperienceControls active="atlas" onNavigate={() => undefined} onDensityChange={() => undefined} initialPaletteOpen />);
+    expect(markup).toContain('role="dialog"');
+    expect(markup).toContain('aria-modal="true"');
+    expect(markup).toContain('aria-describedby="atlas-command-palette-boundary"');
+    expect(markup).toContain('aria-label="Close command palette"');
+    expect(markup).toContain('aria-current="page"');
+    olympusCommandDestinations.forEach(([, label]) => expect(markup).toContain(`aria-label="Navigate to ${label}"`));
   });
 });
