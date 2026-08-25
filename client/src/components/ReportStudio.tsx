@@ -1,11 +1,12 @@
 import { findings as demoFindings, riskScore, scope, type Finding } from "@/lib/atlasData";
 import { Download, ShieldCheck } from "lucide-react";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
 const reportTypes = ["Executive intelligence brief", "Technical assessment", "Geographic exposure review", "Evidence register", "Retest addendum"] as const;
 
 export default function ReportStudio({ records = demoFindings, loading = false, error = false }: { records?: Finding[]; loading?: boolean; error?: boolean }) {
   const [selected, setSelected] = useState<typeof reportTypes[number]>(reportTypes[0]);
+  const [downloadedAt, setDownloadedAt] = useState<string | null>(null);
   const snapshot = useMemo(() => createReport(selected, records), [selected, records]);
   const download = () => {
     const blob = new Blob([snapshot], { type: "text/markdown" });
@@ -15,9 +16,11 @@ export default function ReportStudio({ records = demoFindings, loading = false, 
     anchor.download = `${selected.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.md`;
     anchor.click();
     URL.revokeObjectURL(url);
+    setDownloadedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
   return <>
     <div className="mb-5 flex flex-col justify-between gap-4 xl:flex-row xl:items-end"><div><p className="eyebrow">REPORTS & EXPORTS / REPRODUCIBLE OUTPUT</p><h2 className="atlas-heading mt-1">DECISION-READY DELIVERABLES</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-white/52">Each report retains the synthetic-data banner, authorization boundary, snapshot timestamp, scope, provenance, and evidence references used to support it.</p></div><button onClick={download} disabled={loading || error} className="atlas-action atlas-action-primary disabled:cursor-not-allowed disabled:opacity-50"><Download size={15}/> Download Markdown snapshot</button></div>
+    {downloadedAt && <div role="status" className="mb-4 rounded-lg border border-[#83a77c]/30 bg-[#83a77c]/[.07] px-3 py-2 text-xs text-[#bde0b5]">Downloaded the selected synthetic Markdown snapshot at {downloadedAt}. No client delivery, notification, or external sharing occurred.</div>}
     {loading ? <section className="atlas-surface p-7 text-sm text-white/52" aria-live="polite">Loading persisted report records…</section> : error ? <section className="atlas-surface border-[#ee7664]/30 p-7 text-sm text-[#ffab9d]" role="alert">The persisted report record feed is unavailable. No export has been generated.</section> : records.length === 0 ? <section className="atlas-surface border-dashed p-8 text-center text-sm text-white/48">No evidence-backed findings are available for report generation.</section> : <div className="grid gap-4 xl:grid-cols-[.55fr_1.45fr]"><section className="atlas-surface p-3">{reportTypes.map((type) => <button key={type} onClick={() => setSelected(type)} className={`mb-1 w-full rounded-lg px-3 py-3 text-left text-xs transition-colors ${selected === type ? "bg-[#e8b760]/12 text-[#f2cb82]" : "text-white/60 hover:bg-white/[.035]"}`}><p className="font-semibold">{type}</p><p className="mt-1 text-[10px] text-white/38">{type === "Executive intelligence brief" ? "Leadership decision snapshot" : type === "Technical assessment" ? "Evidence and remediation detail" : type === "Geographic exposure review" ? "Spatial distribution and uncertainty" : type === "Evidence register" ? "Object-storage reference manifest" : "Closure and residual-risk detail"}</p></button>)}</section><section className="atlas-surface overflow-hidden"><div className="flex items-center justify-between border-b border-white/10 px-4 py-3"><div><p className="eyebrow">{selected.toUpperCase()}</p><p className="mt-1 text-xs text-white/45">ENG-2026-08 · snapshot 09:42 UTC · synthetic</p></div><span className="atlas-status">ready</span></div><article className="prose prose-invert max-w-none p-5 text-sm leading-7 prose-headings:font-['Barlow_Condensed'] prose-headings:tracking-[.08em] prose-p:text-white/65 prose-li:text-white/65"><ReportBody type={selected} records={records}/></article><div className="flex items-center gap-2 border-t border-white/10 bg-black/20 px-4 py-3 text-[11px] text-white/45"><ShieldCheck size={14} className="text-[#e8b760]"/> Synthetic-only disclosure, scope boundary, evidence references, and report snapshot are included by default.</div></section></div>}
   </>;
 }

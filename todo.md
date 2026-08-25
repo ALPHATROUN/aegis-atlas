@@ -1,5 +1,17 @@
 # Project TODO
 
+- [x] Define the Olympus Atlas operating-domain architecture and visual system, keeping the project separate from Anubis Guard and preserving Atlas’s GIS-first authorized-use boundary.
+- [x] Create distinct living Olympus visual environments for each Atlas workspace, tied to geographic observation, relationship intelligence, provenance, scenarios, controls, delivery, and readiness.
+- [x] Replace the Atlas single-screen experience with deep-linkable workspaces and persistent route-aware navigation; no primary control may remain decorative or inert.
+- [x] Expand Atlas’s GIS-first enterprise workflows with bounded evidence, risk-scenario, decision, delivery, and readiness controls that do not perform active probing or external mutations.
+- [x] Add an Olympus tenant-activation workbench that validates non-secret authorization, identity, storage, connector, recovery, and release evidence locally and exports an explicit non-activation readiness packet.
+- [x] Wire every visible Olympus report and route-primary control to a bounded action, selection state, local download, navigation, or explicit unavailable prerequisite; remove decorative controls.
+- [x] Add automated and browser verification that primary controls on the routed Atlas workspaces produce a real, visible outcome rather than remaining inert.
+- [x] Browser-verify a primary control on every Olympus workspace—Atlas, Findings, Intelligence, Imports, Reports, Operations, and Readiness—and record each visible bounded outcome.
+- [x] Add targeted automated coverage for command-palette destinations and bounded route-primary control contracts beyond the report workspace.
+- [x] Add automated command-palette destination coverage for every Olympus chamber and a targeted bounded-control contract outside the report workspace before release.
+- [ ] Verify responsive route navigation, map interactions, accessibility, visual differentiation, tests, production build, and GitHub synchronization under Salah ELsherif’s identity.
+
 - [x] Improve Aegis Atlas with carefully scoped visual and interaction enhancements that preserve its established GIS-first workflows and remain separate from Anubis Guard.
 - [x] Add a functional GIS workflow interaction enhancement that improves orientation or analysis usability without changing Aegis Atlas product scope.
 - [x] Validate the improved Aegis Atlas workspace visually in the browser to confirm atmosphere, contrast, map usability, and controls remain readable.
